@@ -963,6 +963,11 @@ function animSteps(q){
 </script>
 
 <script id="dom-logic">
+if(new URLSearchParams(location.search).get("init") !== null){
+  Object.keys(localStorage).filter(k => k.startsWith("math20_")).forEach(k => localStorage.removeItem(k));
+  location.replace(location.pathname);
+  throw new Error("init");
+}
 const $ = id => document.getElementById(id);
 const LS = {
   cookies: "math20_cookies", companion: "math20_companion", muted: "math20_muted", perfect: "math20_perfect", lit: "math20_lit", progress: "math20_progress", history: "math20_history"
