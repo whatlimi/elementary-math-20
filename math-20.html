@@ -239,8 +239,7 @@
     background:linear-gradient(180deg,#fff,#fff8ec);border:3px solid var(--ink);border-radius:20px;
     padding:10px 16px;box-shadow:var(--sh1),var(--inset);margin-bottom:12px;
   }
-  .star-count{font-weight:800;font-size:1.1rem;white-space:nowrap}
-  .star-count .st{font-size:1.25rem;filter:drop-shadow(0 1px 0 rgba(255,179,0,.5))}
+
   .badge{font-size:.85rem;font-weight:700;white-space:nowrap}
   .lv-track{flex:1;height:13px;background:#f1e6d8;border:2px solid var(--ink);border-radius:99px;overflow:hidden;min-width:50px;box-shadow:inset 0 2px 3px rgba(61,46,42,.18)}
   .lv-fill{height:100%;width:0%;background:linear-gradient(90deg,var(--lemon),var(--pink));border-radius:99px;transition:width .5s cubic-bezier(.34,1.56,.64,1);box-shadow:0 0 8px rgba(255,126,179,.5)}
@@ -410,8 +409,6 @@
     h1{font-size:1.05rem;letter-spacing:0}
 
     .star-bar{padding:8px 12px;gap:8px;margin-bottom:10px}
-    .star-count{font-size:1rem}
-    .star-count .st{font-size:1.1rem}
     .badge{font-size:.78rem}
     .lv-track{height:11px}
 
@@ -467,7 +464,6 @@
     .buddy-btn{width:42px;height:42px;font-size:1.5rem}
     h1{font-size:.92rem}
 
-    .star-count{font-size:.92rem}
     .badge{font-size:.72rem}
     .card{padding:18px 12px 20px}
     .buddy{font-size:3.2rem}
@@ -515,7 +511,7 @@
     <h2 class="cover-title"><span>数</span><span>学</span><span>乐</span><span>园</span></h2>
     <p class="cover-sub">20 以内加减法 · 边玩边学</p>
     <button class="start-btn" id="startBtn">开 始</button>
-    <p class="cover-hint">答对攒饼干 🍪，招来更多小伙伴！</p>
+    <p class="cover-hint">全对一套，点亮一只小伙伴！</p>
   </div>
 </section>
 
@@ -528,9 +524,8 @@
   </header>
 
   <div class="star-bar">
-    <span class="star-count"><span class="st">🍪</span> <span id="starNum">0</span></span>
     <span class="lv-track"><span class="lv-fill" id="lvFill"></span></span>
-    <span class="badge" id="badge">下一只：🐰跳跳</span>
+    <span class="badge" id="badge">已点亮 0 / 20</span>
   </div>
 
   <div class="set-bar" id="setBar">第 1 / 20 套</div>
@@ -560,7 +555,7 @@
     <div class="big" id="mFace">🎉</div>
     <h2 id="mTitle">太棒啦！</h2>
     <p id="mText">10 题里答对了 9 题，继续加油！</p>
-    <div class="gain" id="mGain">本套获得 🍪 x 12</div>
+    <div class="gain" id="mGain"></div>
     <div class="light-panel" id="lightPanel" style="display:none">
       <p class="light-tip">🎉 全对啦！选一只新伙伴点亮吧！</p>
       <div class="light-grid" id="lightGrid"></div>
@@ -658,9 +653,6 @@ const ENCOURAGE = ["没关系，再想想～","差一点点哦～","慢一点，
 const ROUND_SIZE = 10;
 const TOTAL_SETS = 20;
 
-function cookiesFor(isAdd, blank){
-  return (isAdd && !blank) ? 1 : 2;
-}
 function isLit(idx){ return litBuddies.indexOf(idx) >= 0; }
 function canLight(){ return perfectSets > litBuddies.length; }
 
@@ -970,21 +962,15 @@ if(new URLSearchParams(location.search).get("init") !== null){
 }
 const $ = id => document.getElementById(id);
 const LS = {
-  cookies: "math20_cookies", companion: "math20_companion", muted: "math20_muted", perfect: "math20_perfect", lit: "math20_lit", progress: "math20_progress", history: "math20_history"
+  companion: "math20_companion", muted: "math20_muted", perfect: "math20_perfect", lit: "math20_lit", progress: "math20_progress", history: "math20_history"
 };
-let cookies = parseInt(localStorage.getItem(LS.cookies), 10);
-if(isNaN(cookies)){
-  const old = parseInt(localStorage.getItem("math20_stars") || "0", 10) || 0;
-  cookies = old;
-  localStorage.setItem(LS.cookies, String(old));
-}
 let companionIdx = parseInt(localStorage.getItem(LS.companion) || "0", 10) || 0;
 if(companionIdx >= COMPANIONS.length) companionIdx = 0;
 let muted = localStorage.getItem(LS.muted) === "1";
 let mode = "mix";
 let q = null, answered = false;
 let lastPicked = 0;
-let qIndex = 0, roundCorrect = 0, roundCookies = 0, roundRetried = 0, streak = 0;
+let qIndex = 0, roundCorrect = 0, roundRetried = 0, streak = 0;
 let roundLog = [];
 let roundQuestions = [];
 let setIndex = 0, totalCorrect = 0;
@@ -993,28 +979,25 @@ let litBuddies = JSON.parse(localStorage.getItem(LS.lit) || "[]");
 if(!Array.isArray(litBuddies)) litBuddies = [];
 let targetBuddy = -1;
 let explained = false;
-let setStartCookies = 0;
-let setStartPS = 0;
 let audioCtx = null;
+let sessionId = null;
+let needNewRecord = true;
 let currentRecordId = null;
-let needNewRecord = false;
 
 function makeSnapshot(){
   return {
     litBuddies: [...litBuddies],
-    cookies, perfectSets, companionIdx, totalCorrect
+    perfectSets, companionIdx, totalCorrect
   };
 }
 function restoreSnapshot(snap){
   if(!snap) return;
   litBuddies = Array.isArray(snap.litBuddies) ? [...snap.litBuddies] : [];
-  cookies = snap.cookies || 0;
   perfectSets = snap.perfectSets || 0;
   companionIdx = snap.companionIdx || 0;
   if(companionIdx >= COMPANIONS.length) companionIdx = 0;
   totalCorrect = snap.totalCorrect || 0;
   localStorage.setItem(LS.lit, JSON.stringify(litBuddies));
-  localStorage.setItem(LS.cookies, String(cookies));
   localStorage.setItem(LS.perfect, String(perfectSets));
   localStorage.setItem(LS.companion, String(companionIdx));
 }
@@ -1036,40 +1019,52 @@ function updateHistory(id, patch){
   hist[idx] = Object.assign(hist[idx], patch);
   localStorage.setItem(LS.history, JSON.stringify(hist));
 }
-function createRecord(){
+function createSession(){
   let hist = loadHistory();
-  hist.forEach(h => { if(h.status === "ongoing") h.status = "abandoned"; });
-  currentRecordId = Date.now() + rnd(0, 999);
+  hist.forEach(h => { if(h.status === "ongoing") finalizeSession(h, "abandoned"); });
+  sessionId = Date.now() + rnd(0, 999);
+  currentRecordId = sessionId;
+  needNewRecord = false;
   hist.push({
-    id: currentRecordId,
+    id: sessionId,
     status: "ongoing",
+    startedAt: sessionId,
     setIndex: setIndex || 1,
     qIndex: 0, totalCorrect, targetBuddy, companionIdx,
-    roundCorrect: 0, roundCookies: 0, roundRetried: 0, streak: 0,
-    roundLog: [], roundQuestions: [],
+    roundCorrect: 0, roundRetried: 0, streak: 0,
+    roundLog: [], questions: [],
     q: null, answered: false, explained: false, lastPicked: 0,
     gotBuddy: false,
-    questions: [],
-    snapshot: makeSnapshot(),
-    ts: currentRecordId
+    snapshotStart: makeSnapshot(),
+    ts: Date.now()
   });
   if(hist.length > 200) hist = hist.slice(-200);
   localStorage.setItem(LS.history, JSON.stringify(hist));
-  localStorage.setItem(LS.progress, String(currentRecordId));
+  localStorage.setItem(LS.progress, String(sessionId));
+}
+function finalizeSession(h, status){
+  const start = h.snapshotStart || {litBuddies:[]};
+  const end = makeSnapshot();
+  h.status = status || "done";
+  h.endedAt = Date.now();
+  h.snapshotEnd = end;
+  h.gainedBuddies = end.litBuddies.filter(i => start.litBuddies.indexOf(i) < 0);
 }
 function saveProgress(){
   if(qIndex >= ROUND_SIZE) return;
-  if(!currentRecordId) return;
-  updateHistory(currentRecordId, {
-    qIndex, roundCorrect, roundCookies, roundRetried, streak,
+  if(!sessionId) return;
+  updateHistory(sessionId, {
+    setIndex, qIndex, totalCorrect, targetBuddy, companionIdx,
+    roundCorrect, roundRetried, streak,
     roundLog: [...roundLog],
-    roundQuestions: roundQuestions.map(rq => ({a:rq.a,b:rq.b,res:rq.res,ans:rq.ans,isAdd:rq.isAdd,blank:rq.blank})),
+    questions: roundQuestions.map(rq => ({a:rq.a,b:rq.b,res:rq.res,ans:rq.ans,isAdd:rq.isAdd,blank:rq.blank})),
     q: q ? {a:q.a,b:q.b,res:q.res,ans:q.ans,isAdd:q.isAdd,blank:q.blank} : null,
     answered, explained, lastPicked,
+    snapshot: makeSnapshot(),
     ts: Date.now()
   });
 }
-function clearProgress(){ localStorage.removeItem(LS.progress); currentRecordId = null; }
+function clearProgress(){ localStorage.removeItem(LS.progress); sessionId = null; }
 function loadProgress(){
   const id = localStorage.getItem(LS.progress);
   if(!id) return null;
@@ -1136,7 +1131,6 @@ function fxCongrats(){
 }
 
 function renderHUD(){
-  $("starNum").textContent = cookies;
   const lit = litBuddies.length;
   const pct = Math.round((lit / BUDDIES.length) * 100);
   $("lvFill").style.width = pct + "%";
@@ -1196,11 +1190,7 @@ function submitAnswer(){
   answered = true;
   const right = v === q.ans;
   const firstTry = !explained;
-  const beforeCookies = cookies;
   if(right){
-    const gained = firstTry ? cookiesFor(q.isAdd, q.blank) : 1;
-    cookies += gained;
-    roundCookies += gained;
     if(firstTry){ streak++; roundCorrect++; }
     else { roundRetried++; }
     roundLog.push(firstTry ? "ok" : "retry");
@@ -1274,7 +1264,7 @@ function showSummary(){
     $("mFace").textContent = "🏆";
     $("mTitle").textContent = "全部 " + TOTAL_SETS + " 套通关！";
     $("mText").textContent = "总共答对 " + totalCorrect + " / " + (TOTAL_SETS * ROUND_SIZE) + " 题，" + COMPANIONS[companionIdx].emoji + " 为你骄傲！";
-    $("mGain").textContent = "共攒饼干 🍪 x " + cookies + "，点亮 " + litBuddies.length + " / " + BUDDIES.length + " 只伙伴";
+    $("mGain").textContent = "点亮 " + litBuddies.length + " / " + BUDDIES.length + " 只伙伴";
     $("againBtn").textContent = "重新挑战全部 🔄";
     $("resetBtn").style.display = "none";
   } else {
@@ -1283,7 +1273,7 @@ function showSummary(){
     $("mFace").textContent = gotBuddy ? "🎉" : (missedBuddy ? "💪" : s.face);
     $("mTitle").textContent = gotBuddy ? "获得 " + BUDDIES[targetBuddy].emoji + BUDDIES[targetBuddy].name + "！" : (missedBuddy ? "差一点点！" : "第 " + setIndex + " 套完成！");
     $("mText").textContent = "一次做对 " + roundCorrect + " / " + ROUND_SIZE + (roundRetried ? "，学习了 " + roundRetried + " 题" : "") + "，累计 " + totalCorrect + " 题。";
-    $("mGain").textContent = gotBuddy ? "🎉 " + BUDDIES[targetBuddy].emoji + BUDDIES[targetBuddy].name + " 点亮啦！" : (missedBuddy ? "再试一次，全对就能获得 " + BUDDIES[targetBuddy].emoji + BUDDIES[targetBuddy].name + "！" : "本套获得 🍪 x " + roundCookies + "，还剩 " + (TOTAL_SETS - setIndex) + " 套！");
+    $("mGain").textContent = gotBuddy ? "🎉 " + BUDDIES[targetBuddy].emoji + BUDDIES[targetBuddy].name + " 点亮啦！" : (missedBuddy ? "再试一次，全对就能获得 " + BUDDIES[targetBuddy].emoji + BUDDIES[targetBuddy].name + "！" : "还剩 " + (TOTAL_SETS - setIndex) + " 套！");
     $("againBtn").textContent = missedBuddy ? "重做这套 ✏️" : "下一套 ➡️";
     $("againBtn").dataset.retry = missedBuddy ? "1" : "";
     $("resetBtn").style.display = "";
@@ -1298,19 +1288,22 @@ function showSummary(){
     speak("🎉 " + BUDDIES[targetBuddy].emoji + BUDDIES[targetBuddy].name + " 点亮啦！", true);
     renderCover();
   }
-  if(currentRecordId){
-    updateHistory(currentRecordId, {
+  if(sessionId){
+    const sess = loadHistory().find(h => h.id === sessionId);
+    const start = (sess && sess.snapshotStart) || {litBuddies:[]};
+    const end = makeSnapshot();
+    updateHistory(sessionId, {
       status: "done",
-      roundCorrect, roundRetried, roundCookies,
-      gotBuddy,
+      roundCorrect, roundRetried, gotBuddy,
       questions: roundQuestions.map((rq, i) => ({
         isAdd: rq.isAdd, blank: rq.blank, status: roundLog[i] || "miss"
       })),
-      snapshot: makeSnapshot(),
-      ts: Date.now()
+      endedAt: Date.now(),
+      snapshotEnd: end,
+      gainedBuddies: end.litBuddies.filter(i => start.litBuddies.indexOf(i) < 0),
+      totalCorrect, ts: Date.now()
     });
   }
-  clearProgress();
   renderHUD();
 }
 
@@ -1379,13 +1372,11 @@ function showExplain(){
 }
 
 function startRound(){
+  if(needNewRecord){ createSession(); needNewRecord = false; }
   if(setIndex === 0) setIndex = 1;
-  if(needNewRecord){ createRecord(); needNewRecord = false; }
-  qIndex = 0; roundCorrect = 0; roundCookies = 0; roundRetried = 0; streak = 0;
+  qIndex = 0; roundCorrect = 0; roundRetried = 0; streak = 0;
   roundLog = [];
   roundQuestions = [];
-  setStartCookies = cookies;
-  setStartPS = perfectSets;
   $("overlay").classList.remove("show");
   $("lightPanel").style.display = "none";
   $("overlay").querySelector(".btns").style.display = "";
@@ -1464,7 +1455,6 @@ document.querySelectorAll(".chip").forEach(ch => {
     ch.classList.add("on");
     mode = ch.dataset.mode;
     setIndex = 0; totalCorrect = 0;
-    needNewRecord = true;
     if(litBuddies.length < BUDDIES.length) showPickPanel();
     else { targetBuddy = -1; startRound(); }
   });
@@ -1488,18 +1478,18 @@ $("resetBtn").addEventListener("click", () => {
 });
 
 function restoreProgress(p){
-  restoreSnapshot(p.snapshot);
+  restoreSnapshot(p.snapshot || p.snapshotStart);
+  sessionId = p.id || null;
   currentRecordId = p.id || null;
   needNewRecord = false;
   setIndex = p.setIndex || 1;
   qIndex = p.qIndex || 0;
   targetBuddy = p.targetBuddy ?? -1;
   roundCorrect = p.roundCorrect || 0;
-  roundCookies = p.roundCookies || 0;
   roundRetried = p.roundRetried || 0;
   streak = p.streak || 0;
   roundLog = Array.isArray(p.roundLog) ? p.roundLog : [];
-  roundQuestions = Array.isArray(p.roundQuestions) ? p.roundQuestions : [];
+  roundQuestions = Array.isArray(p.questions) ? p.questions : [];
   q = p.q || null;
   answered = p.answered || false;
   explained = p.explained || false;
@@ -1547,25 +1537,27 @@ function renderRecords(){
     const realIdx = hist.length - 1 - ri;
     const answered = (h.roundLog || []).length;
     if(h.status === "ongoing"){
-      const acc = answered > 0 ? Math.round(((h.roundCorrect||0) / answered) * 100) : 0;
+      const progress = Math.round((answered / ROUND_SIZE) * 100);
+      const accTxt = answered > 0 ? ' · 正确 ' + (h.roundCorrect||0) + '/' + answered : '';
       html += '<div class="record-item ongoing" data-type="ongoing" data-idx="' + realIdx + '">';
       html += '<span class="record-emoji">▶️</span>';
       html += '<div class="record-info">';
       html += '<div class="record-title">第 ' + (h.setIndex||1) + ' 套 · 进行中</div>';
-      html += '<div class="record-meta">已答 ' + answered + '/' + ROUND_SIZE + ' 题 · ' + fmtDate(h.ts) + '</div>';
+      html += '<div class="record-meta">已答 ' + answered + '/' + ROUND_SIZE + ' 题' + accTxt + ' · ' + fmtDate(h.ts) + '</div>';
       html += '</div>';
-      html += '<span class="record-acc ' + (acc>=70?'good':acc>=40?'mid':'low') + '">' + acc + '%</span>';
+      html += '<span class="record-acc ' + (progress>=70?'good':progress>=40?'mid':'low') + '">' + progress + '%</span>';
       html += '<span class="record-badge ongoing">继续</span>';
       html += '</div>';
     } else if(h.status === "abandoned"){
-      const acc = answered > 0 ? Math.round(((h.roundCorrect||0) / answered) * 100) : 0;
+      const progress = Math.round((answered / ROUND_SIZE) * 100);
+      const accTxt = answered > 0 ? ' · 正确 ' + (h.roundCorrect||0) + '/' + answered : '';
       html += '<div class="record-item abandoned" data-type="abandoned" data-idx="' + realIdx + '">';
       html += '<span class="record-emoji">⏸️</span>';
       html += '<div class="record-info">';
       html += '<div class="record-title">第 ' + (h.setIndex||1) + ' 套 · 已中断</div>';
-      html += '<div class="record-meta">答了 ' + answered + '/' + ROUND_SIZE + ' 题 · ' + fmtDate(h.ts) + '</div>';
+      html += '<div class="record-meta">答了 ' + answered + '/' + ROUND_SIZE + ' 题' + accTxt + ' · ' + fmtDate(h.ts) + '</div>';
       html += '</div>';
-      html += '<span class="record-acc ' + (acc>=70?'good':acc>=40?'mid':'low') + '">' + acc + '%</span>';
+      html += '<span class="record-acc ' + (progress>=70?'good':progress>=40?'mid':'low') + '">' + progress + '%</span>';
       html += '<span class="record-badge done">中断</span>';
       html += '</div>';
     } else {
@@ -1593,13 +1585,15 @@ function renderRecords(){
       const hist2 = loadHistory();
       const h = hist2[idx];
       if(!h) return;
-      if(type === "ongoing"){
+      if(type === "ongoing" || type === "abandoned"){
         closeRecord();
         restoreProgress(h);
       } else if(type === "done"){
         closeRecord();
-        restoreSnapshot(h.snapshot);
-        setIndex = h.setIndex || 1;
+        restoreSnapshot(h.snapshotEnd || h.snapshotStart);
+        totalCorrect = h.totalCorrect || 0;
+        setIndex = (h.setIndex || 1) + 1;
+        if(setIndex > TOTAL_SETS){ setIndex = 1; totalCorrect = 0; }
         needNewRecord = true;
         if(litBuddies.length < BUDDIES.length) showPickPanel();
         else { targetBuddy = -1; showScreen("game"); startRound(); }
@@ -1633,7 +1627,6 @@ function renderStats(){
   const firstCorrect = hist.reduce((s, h) => s + (h.roundCorrect || 0), 0);
   const retried = hist.reduce((s, h) => s + (h.roundRetried || 0), 0);
   const perfectSets = hist.filter(h => h.gotBuddy).length;
-  const totalCookies = hist.reduce((s, h) => s + (h.roundCookies || 0), 0);
   const acc = totalQ > 0 ? Math.round((firstCorrect / totalQ) * 100) : 0;
   let addTotal = 0, addOk = 0, subTotal = 0, subOk = 0;
   let fillTotal = 0, fillOk = 0, plainTotal = 0, plainOk = 0;
