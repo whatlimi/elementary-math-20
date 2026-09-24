@@ -905,7 +905,7 @@ function makeSteps(q){
 }
 
 function makeSteps50(q){
-  const { a, b, ans, isAdd } = q;
+  const { a, b, res, isAdd } = q;
   const aOnes = a % 10, aTens = Math.floor(a / 10);
   const bOnes = b % 10, bTens = Math.floor(b / 10);
   if(isAdd){
@@ -913,7 +913,7 @@ function makeSteps50(q){
       return [
         {t:"十位加十位：<b>"+aTens*10+" + "+bTens*10+" = "+(aTens+bTens)*10+"</b>。",hot:false},
         {t:"个位加个位：<b>"+aOnes+" + "+bOnes+" = "+(aOnes+bOnes)+"</b>。",hot:true},
-        {t:"合起来：<b>"+(aTens+bTens)*10+" + "+(aOnes+bOnes)+" = "+ans+"</b>。",hot:false}
+        {t:"合起来：<b>"+(aTens+bTens)*10+" + "+(aOnes+bOnes)+" = "+res+"</b>。",hot:false}
       ];
     }
     const need = (10 - aOnes) % 10;
@@ -922,13 +922,13 @@ function makeSteps50(q){
       if(rest === 0){
         return [
           {t:"看 <b>"+a+"</b>，离下一个整十还差 <b>"+need+"</b>。",hot:false},
-          {t:a+" + "+need+" = <b>"+ans+"</b>，正好凑成整十！",hot:true}
+          {t:a+" + "+need+" = <b>"+res+"</b>，正好凑成整十！",hot:true}
         ];
       }
       return [
         {t:"看 <b>"+a+"</b>，离下一个整十还差 <b>"+need+"</b>。",hot:false},
         {t:"把 "+b+" 拆成 <b>"+need+"</b> 和 <b>"+rest+"</b>。",hot:true},
-        {t:a+" + "+need+" = <b>"+(a+need)+"</b>，再 "+(a+need)+" + "+rest+" = <b>"+ans+"</b>。",hot:false}
+        {t:a+" + "+need+" = <b>"+(a+need)+"</b>，再 "+(a+need)+" + "+rest+" = <b>"+res+"</b>。",hot:false}
       ];
     }
     return [
@@ -940,26 +940,26 @@ function makeSteps50(q){
     const afterTens = a - bTens * 10;
     if(bOnes === 0){
       return [
-        {t:"减的是整十数，直接减就好：<b>"+a+" − "+b+" = "+ans+"</b>。",hot:true}
+        {t:"减的是整十数，直接减就好：<b>"+a+" − "+b+" = "+res+"</b>。",hot:true}
       ];
     }
     return [
       {t:"先减整十：<b>"+a+" − "+bTens*10+" = "+afterTens+"</b>。",hot:true},
-      {t:"再减个位：<b>"+afterTens+" − "+bOnes+" = "+ans+"</b>。",hot:false}
+      {t:"再减个位：<b>"+afterTens+" − "+bOnes+" = "+res+"</b>。",hot:false}
     ];
   }
   if(aOnes < b){
     if(aOnes === 0){
       return [
         {t:"<b>"+a+"</b> 已经是整十数，直接减就好。",hot:false},
-        {t:a+" − "+b+" = <b>"+ans+"</b>，答案就是它！",hot:true}
+        {t:a+" − "+b+" = <b>"+res+"</b>，答案就是它！",hot:true}
       ];
     }
     const need = aOnes, rest = b - need;
     return [
       {t:"先减到整十：<b>"+a+" − "+need+" = "+(a-need)+"</b>。",hot:false},
       {t:"把 "+b+" 拆成 <b>"+need+"</b> 和 <b>"+rest+"</b>。",hot:true},
-      {t:(a-need)+" − "+rest+" = <b>"+ans+"</b>，答案就是它！",hot:false}
+      {t:(a-need)+" − "+rest+" = <b>"+res+"</b>，答案就是它！",hot:false}
     ];
   }
   return [
@@ -1198,7 +1198,7 @@ function animSteps(q){
 }
 
 function animSteps50(q){
-  const { a, b, ans, isAdd } = q;
+  const { a, b, res, isAdd } = q;
   const aOnes = a % 10, aTens = Math.floor(a / 10);
   const bOnes = b % 10, bTens = Math.floor(b / 10);
   if(isAdd){
@@ -1207,7 +1207,7 @@ function animSteps50(q){
         {row: anEq(a + " + " + b + " = ？"), cap: "两位数加两位数，十位和十位加、个位和个位加", hot:false},
         {row: anEq(aTens*10 + " + " + bTens*10 + " = " + (aTens+bTens)*10), cap: "十位加十位：<b>" + aTens*10 + " + " + bTens*10 + " = " + (aTens+bTens)*10 + "</b>", hot:true},
         {row: anEq(aOnes + " + " + bOnes + " = " + (aOnes+bOnes)), cap: "个位加个位：<b>" + aOnes + " + " + bOnes + " = " + (aOnes+bOnes) + "</b>", hot:true},
-        {row: anEq((aTens+bTens)*10 + " + " + (aOnes+bOnes) + " = " + ans, true), cap: "合起来就是 <b>" + ans + "</b>", hot:false}
+        {row: anEq((aTens+bTens)*10 + " + " + (aOnes+bOnes) + " = " + res, true), cap: "合起来就是 <b>" + res + "</b>", hot:false}
       ];
     }
     const need = (10 - aOnes) % 10;
@@ -1216,19 +1216,19 @@ function animSteps50(q){
       if(rest === 0){
         return [
           {row: anEq(a + " + " + b + " = ？"), cap: "先看 <b>" + a + "</b>，离整十还差 <b>" + need + "</b>", hot:false},
-          {row: anEq(a + " + " + need + " = " + ans, true), cap: "正好凑成整十，答案是 <b>" + ans + "</b>", hot:true}
+          {row: anEq(a + " + " + need + " = " + res, true), cap: "正好凑成整十，答案是 <b>" + res + "</b>", hot:true}
         ];
       }
       return [
         {row: anEq(a + " + " + b + " = ？"), cap: "先看 <b>" + a + "</b>，离整十还差 <b>" + need + "</b>", hot:false},
         {row: anEq(a + " + " + need + " = " + (a+need)), cap: "从 " + b + " 里拆出 <b>" + need + "</b>，凑成整十 <b>" + (a+need) + "</b>", hot:true},
         {row: anEq(b + " 分成 " + need + " 和 " + rest), cap: "剩下的 <b>" + rest + "</b> 还要加上", hot:false},
-        {row: anEq((a+need) + " + " + rest + " = " + ans, true), cap: "所以答案是 <b>" + ans + "</b>", hot:false}
+        {row: anEq((a+need) + " + " + rest + " = " + res, true), cap: "所以答案是 <b>" + res + "</b>", hot:false}
       ];
     }
     return [
       {row: anEq(a + " + " + b + " = ？"), cap: "个位 " + aOnes + " 加 " + b + " 没满 10", hot:false},
-      {row: anEq(a + " + " + b + " = " + ans, true), cap: "直接加，答案是 <b>" + ans + "</b>", hot:true}
+      {row: anEq(a + " + " + b + " = " + res, true), cap: "直接加，答案是 <b>" + res + "</b>", hot:true}
     ];
   }
   if(b >= 10){
@@ -1236,20 +1236,20 @@ function animSteps50(q){
     if(bOnes === 0){
       return [
         {row: anEq(a + " − " + b + " = ？"), cap: "减的是整十数，直接减", hot:false},
-        {row: anEq(a + " − " + b + " = " + ans, true), cap: "答案是 <b>" + ans + "</b>", hot:true}
+        {row: anEq(a + " − " + b + " = " + res, true), cap: "答案是 <b>" + res + "</b>", hot:true}
       ];
     }
     return [
       {row: anEq(a + " − " + b + " = ？"), cap: "两位数减两位数，先减整十、再减个位", hot:false},
       {row: anEq(a + " − " + bTens*10 + " = " + afterTens), cap: "先减整十：<b>" + a + " − " + bTens*10 + " = " + afterTens + "</b>", hot:true},
-      {row: anEq(afterTens + " − " + bOnes + " = " + ans, true), cap: "再减个位：<b>" + afterTens + " − " + bOnes + " = " + ans + "</b>", hot:true}
+      {row: anEq(afterTens + " − " + bOnes + " = " + res, true), cap: "再减个位：<b>" + afterTens + " − " + bOnes + " = " + res + "</b>", hot:true}
     ];
   }
   if(aOnes < b){
     if(aOnes === 0){
       return [
         {row: anEq(a + " − " + b + " = ？"), cap: "<b>" + a + "</b> 已经是整十数，直接减", hot:false},
-        {row: anEq(a + " − " + b + " = " + ans, true), cap: "答案是 <b>" + ans + "</b>", hot:true}
+        {row: anEq(a + " − " + b + " = " + res, true), cap: "答案是 <b>" + res + "</b>", hot:true}
       ];
     }
     const need = aOnes, rest = b - need;
@@ -1257,12 +1257,12 @@ function animSteps50(q){
       {row: anEq(a + " − " + b + " = ？"), cap: "个位 " + aOnes + " 不够减 " + b + "，先减到整十", hot:false},
       {row: anEq(a + " − " + need + " = " + (a-need)), cap: "先减 <b>" + need + "</b>：" + a + " − " + need + " = <b>" + (a-need) + "</b>", hot:true},
       {row: anEq(b + " 分成 " + need + " 和 " + rest), cap: "把 " + b + " 分成 <b>" + need + "</b> 和 <b>" + rest + "</b>", hot:false},
-      {row: anEq((a-need) + " − " + rest + " = " + ans, true), cap: "再减 " + rest + "，答案是 <b>" + ans + "</b>", hot:false}
+      {row: anEq((a-need) + " − " + rest + " = " + res, true), cap: "再减 " + rest + "，答案是 <b>" + res + "</b>", hot:false}
     ];
   }
   return [
     {row: anEq(a + " − " + b + " = ？"), cap: "个位 " + aOnes + " 够减 " + b + "，不用退位", hot:false},
-    {row: anEq(a + " − " + b + " = " + ans, true), cap: "直接减，答案是 <b>" + ans + "</b>", hot:true}
+    {row: anEq(a + " − " + b + " = " + res, true), cap: "直接减，答案是 <b>" + res + "</b>", hot:true}
   ];
 }
 
