@@ -7,6 +7,7 @@
 
 - [ ] **math-20** 初始化入口的产品化（当前用 `?init` URL 参数，较隐蔽，待定是否要可见按钮）— `open`
 - [ ] **zentao-tool** 连真实禅道验证 `/users`、任务类型、项目 vs 执行的环境假设
+- [ ] **song-english-vocab** 用户在**本机**跑一次 `node scripts/fetch-lyrics.mjs` 抓齐 45 首歌词（沙箱内直连歌词 API 被拦）→ 然后写 `scripts/extract-vocab.mjs` 产出每首歌词表
 
 ## 技术债池（Tech debt）
 

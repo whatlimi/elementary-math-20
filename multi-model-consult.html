@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>多模型会诊工作台</title>
+<style>
+  :root{
+    --bg:#ffffff; --sidebar:#f7f7f5; --text:#37352f; --muted:#787774;
+    --border:#e9e9e7; --accent:#37352f; --accent-bg:#f1f1ef;
+    --hover:#f1f1ef; --blue:#0b6bcf; --code-bg:#f7f6f3;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.6;font-size:16px}
+
+  /* ===== 顶栏 ===== */
+  .topbar{position:sticky;top:0;z-index:50;height:48px;background:var(--bg);border-bottom:1px solid var(--border);
+    display:flex;align-items:center;gap:10px;padding:0 18px}
+  .topbar .logo{display:flex;align-items:center;gap:8px;font-weight:700;font-size:15px}
+  .topbar .logo .dot{width:22px;height:22px;background:#000;color:#fff;border-radius:5px;display:grid;place-items:center;font-size:12px;font-weight:600}
+  .topbar .crumb{font-size:13px;color:var(--muted);margin-left:auto}
+  .topbar .crumb b{color:var(--text)}
+
+  /* ===== 主内容 ===== */
+  .doc{max-width:860px;margin:0 auto;padding:40px 30px 120px}
+  h1.title{font-size:34px;font-weight:800;line-height:1.2;letter-spacing:-.01em;margin-bottom:8px}
+  .lead{color:var(--muted);font-size:15px;margin-bottom:28px}
+  .doc-sep{border:none;border-top:1px solid var(--border);margin:28px 0}
+  h2.sec{font-size:20px;font-weight:700;margin:8px 0 12px}
+
+  /* ===== 步骤 ===== */
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin:16px 0 4px}
+  .step{background:#fbfbfa;border:1px solid var(--border);border-radius:10px;padding:14px 16px}
+  .step .sn{font-size:12px;font-weight:600;color:var(--blue);letter-spacing:.03em;margin-bottom:6px}
+  .step .st{font-size:14.5px;font-weight:600}
+  .step .sd{font-size:12.5px;color:var(--muted);margin-top:3px}
+
+  /* ===== 问题区 ===== */
+  .block{background:#fff;border:1px solid var(--border);border-radius:10px;padding:18px 20px;margin:14px 0}
+  .block .label{font-size:13px;font-weight:600;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:8px}
+  textarea{width:100%;border:1px solid var(--border);border-radius:8px;padding:12px 14px;font-family:var(--sans);
+    font-size:14.5px;color:var(--text);resize:vertical;min-height:120px;background:#fbfbfa;outline:none}
+  textarea:focus{border-color:#aaa;background:#fff}
+  textarea.mono{font-family:var(--mono);font-size:13px}
+  .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+  .btn{display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:#fff;border:none;border-radius:7px;
+    font-size:13.5px;padding:8px 16px;cursor:pointer;transition:opacity .12s}
+  .btn:hover{opacity:.88}
+  .btn.ghost{background:var(--hover);color:var(--text)}
+  .btn.ghost:hover{background:#e6e6e2}
+  .btn.danger{background:#fdecea;color:#c0392b}
+  .btn.danger:hover{background:#fbdbd8}
+  .btn.sm{font-size:12.5px;padding:5px 12px;border-radius:6px}
+  .hint{font-size:12.5px;color:var(--muted);margin-top:8px}
+
+  /* ===== 模型会话卡片 ===== */
+  .session{border:1px solid var(--border);border-radius:10px;margin:14px 0;overflow:hidden;background:#fff}
+  .session-head{display:flex;align-items:center;gap:10px;padding:10px 16px;background:#fbfbfa;border-bottom:1px solid var(--border)}
+  .session-head .badge{width:28px;height:28px;border-radius:8px;background:var(--accent);color:#fff;
+    display:grid;place-items:center;font-size:12px;font-weight:700;flex-shrink:0}
+  .session-head input[type=text]{flex:1;border:none;background:transparent;font-size:14px;font-weight:600;color:var(--text);outline:none}
+  .session-head .verdict{display:flex;gap:6px}
+  .vtag{font-size:11.5px;padding:3px 10px;border-radius:999px;border:1px solid var(--border);cursor:pointer;color:var(--muted);background:#fff;user-select:none}
+  .vtag.on.good{background:#e9f7ef;border-color:#7ccfa2;color:#1e8e4e}
+  .vtag.on.mid{background:#fdf3e0;border-color:#eac37c;color:#b36b16}
+  .vtag.on.bad{background:#fdecea;border-color:#e8a4a0;color:#c0392b}
+  .session-body{padding:12px 16px}
+  .session-body textarea{background:#fff;border-color:transparent;padding:8px 2px;min-height:90px}
+  .session-body textarea:focus{border-color:var(--border);background:#fbfbfa}
+  .session-meta{display:flex;justify-content:space-between;align-items:center;padding:8px 16px;border-top:1px solid var(--border);font-size:12px;color:var(--muted)}
+
+  /* ===== 结论区 ===== */
+  .conclusion{border:2px solid var(--accent);border-radius:10px;padding:18px 20px;margin-top:22px;background:#fbfbfa}
+  .conclusion .label{font-size:13px;font-weight:600;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+  .conclusion textarea{background:#fff}
+
+  /* ===== 导出 ===== */
+  .export-area{margin-top:12px;padding:12px 14px;background:var(--code-bg);border:1px solid var(--border);
+    border-radius:8px;font-family:var(--mono);font-size:12.5px;color:var(--muted);white-space:pre-wrap;display:none;max-height:320px;overflow:auto}
+  .tips{font-size:13px;color:var(--muted);background:#fbfbfa;border:1px solid var(--border);border-radius:8px;padding:12px 16px;line-height:1.8}
+  .tips b{color:var(--text)}
+
+  /* ===== 模型勾选面板 ===== */
+  .model-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(175px,1fr));gap:10px}
+  .model-opt{display:flex;align-items:center;gap:10px;border:1px solid var(--border);border-radius:9px;
+    padding:10px 12px;cursor:pointer;background:#fff;user-select:none;transition:border-color .12s, background .12s}
+  .model-opt:hover{border-color:#ccc}
+  .model-opt.on{border-color:var(--accent);background:#f7f7f5}
+  .model-opt input{width:16px;height:16px;accent-color:var(--accent);flex-shrink:0;cursor:pointer}
+  .model-opt .m-name{font-size:13.5px;font-weight:600;line-height:1.25}
+  .model-opt .m-vendor{font-size:11.5px;color:var(--muted);margin-top:1px}
+
+  /* ===== 视图切换 ===== */
+  .seg{display:inline-flex;border:1px solid var(--border);border-radius:8px;overflow:hidden;margin-left:auto}
+  .seg button{border:none;background:#fff;font-size:12.5px;padding:7px 14px;cursor:pointer;color:var(--muted);transition:background .12s}
+  .seg button:hover{background:var(--hover)}
+  .seg button.on{background:var(--accent);color:#fff;font-weight:600}
+
+  /* ===== 分栏对比视图 ===== */
+  .sessions.grid-view{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:14px;align-items:start}
+  .sessions.grid-view .session{margin:0}
+  .sessions.grid-view .session-body textarea{min-height:280px}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="logo"><span class="dot">会</span>多模型会诊工作台</div>
+  <div class="crumb">CodeArts Agent / <b>会诊台</b></div>
+</div>
+
+<div class="doc">
+
+  <h1 class="title">多模型会诊工作台</h1>
+  <p class="lead">勾选多个模型，各自独立作答，并排分栏对比、交叉验证结论。本页数据自动保存在浏览器本地。</p>
+
+  <div class="steps">
+    <div class="step"><div class="sn">STEP 1</div><div class="st">写清问题</div><div class="sd">用下方的统一提问模板，保证所有模型收到完全一致的输入</div></div>
+    <div class="step"><div class="sn">STEP 2</div><div class="st">勾选模型</div><div class="sd">勾选要会诊的模型即自动建会话，逐个提问并复制回答回来</div></div>
+    <div class="step"><div class="sn">STEP 3</div><div class="st">分栏对比</div><div class="sd">切换到「分栏对比」视图横向比对各模型回答，标记一致 / 存疑 / 分歧</div></div>
+    <div class="step"><div class="sn">STEP 4</div><div class="st">汇总结论</div><div class="sd">一键复制全部内容贴回任意会话，让我或任一模型协助汇总出最终结论</div></div>
+  </div>
+
+  <hr class="doc-sep">
+
+  <div class="block">
+    <div class="label">㊀ 统一提问模板</div>
+    <textarea id="question" class="mono" placeholder="把需要会诊的问题 / 代码 / 需求描述写在这里……"></textarea>
+    <div class="row" style="margin-top:10px">
+      <button class="btn" id="copyTemplate">复制统一提问模板</button>
+      <button class="btn ghost" id="clearQuestion">清空</button>
+    </div>
+    <p class="hint">提示：提问模板建议包含「背景、目标、约束、问题」四要素，各模型只会在你提供的信息上作答。</p>
+  </div>
+
+  <hr class="doc-sep">
+
+  <h2 class="sec">㊁ 勾选会诊模型</h2>
+  <div class="model-grid" id="modelLib"></div>
+  <p class="hint" style="margin-top:10px">勾选 → 自动创建对应模型会话；取消 → 移除该会话（已有回答时会二次确认）。<b style="color:var(--text)">勾选后</b>到各模型会话中提问，再把回答粘贴回来。</p>
+
+  <hr class="doc-sep">
+
+  <h2 class="sec">㊂ 各模型回答</h2>
+  <div class="row" style="margin:10px 0">
+    <button class="btn" id="addSession">+ 添加自定义会话</button>
+    <span class="hint" id="sessionCount" style="margin:0">共 0 个会话</span>
+    <span class="seg" id="viewToggle">
+      <button data-view="list" class="on">列表视图</button>
+      <button data-view="grid">分栏对比</button>
+    </span>
+  </div>
+  <div id="sessions"></div>
+
+  <hr class="doc-sep">
+
+  <div class="conclusion">
+    <div class="label">㊃ 会诊结论</div>
+    <textarea id="conclusion" placeholder="共识点、分歧点、风险与最终结论……"></textarea>
+    <div class="row" style="margin-top:10px">
+      <button class="btn" id="askAgent">汇总总结（复制全部内容给模型）</button>
+      <button class="btn ghost" id="exportAll">导出会诊记录</button>
+    </div>
+    <div class="export-area" id="exportArea"></div>
+  </div>
+
+  <hr class="doc-sep">
+
+  <div class="tips">
+    <b>使用说明：</b>① 在「㊁ 勾选会诊模型」里勾选模型即自动建会话，取消勾选会移除该会话；② 拟合诊时请在所有模型会话中粘贴<b>同一份</b>提问模板，不要临时追加背景信息，保证可比性；③ 切换到「分栏对比」视图可横向并排比对各模型回答，再标记一致 / 存疑 / 分歧；④ 回答差异较大时，可把差异描述补回提问模板再复诊一轮；⑤ 「汇总总结」会把全部内容一键打包复制，粘贴到任意一个会话即可让模型整合出最终结论。
+  </div>
+
+</div>
+
+<script>
+(function(){
+  var LS_KEY = 'multiModelConsult_v1';
+  var MODEL_LIB = [
+    {name:'DeepSeek', vendor:'深度求索'},
+    {name:'GLM', vendor:'智谱 AI'},
+    {name:'华为云盘古', vendor:'华为云'},
+    {name:'OpenAI 兼容网关', vendor:'API 网关'},
+    {name:'Qwen', vendor:'阿里通义'},
+    {name:'Kimi', vendor:'月之暗面'},
+    {name:'豆包', vendor:'火山引擎'},
+    {name:'MiniMax', vendor:'MiniMax'}
+  ];
+  var state = {
+    question: '',
+    conclusion: '',
+    viewMode: 'list',
+    sessions: [
+      {name:'DeepSeek', answer:'', verdict:''},
+      {name:'GLM', answer:'', verdict:''},
+      {name:'华为云盘古', answer:'', verdict:''}
+    ]
+  };
+
+  var $ = function(id){ return document.getElementById(id); };
+  var sessionsEl = $('sessions');
+  var libEl = $('modelLib');
+
+  function save(){
+    try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){}
+  }
+  function load(){
+    try{
+      var raw = localStorage.getItem(LS_KEY);
+      if(raw){ var d = JSON.parse(raw); if(d && d.sessions){ state = d; if(!state.viewMode) state.viewMode = 'list'; } }
+    }catch(e){}
+  }
+
+  function esc(s){ return s.replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+  function copyText(text, btn, okLabel){
+    if(navigator.clipboard){
+      navigator.clipboard.writeText(text).then(function(){
+        if(btn){ var t = btn.textContent; btn.textContent = okLabel; setTimeout(function(){ btn.textContent = t; }, 1500); }
+      });
+    }else{
+      var ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta);
+      ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+      if(btn){ var t = btn.textContent; btn.textContent = okLabel; setTimeout(function(){ btn.textContent = t; }, 1500); }
+    }
+  }
+
+  function renderModelLib(){
+    libEl.innerHTML = MODEL_LIB.map(function(m){
+      var names = state.sessions.map(function(s){ return s.name; });
+      var checked = names.indexOf(m.name) !== -1;
+      return '<label class="model-opt' + (checked ? ' on' : '') + '">'+
+        '<input type="checkbox" data-model="'+ esc(m.name) +'"' + (checked ? ' checked' : '') + '>'+
+        '<span><div class="m-name">'+ esc(m.name) +'</div><div class="m-vendor">'+ esc(m.vendor) +'</div></span>'+
+      '</label>';
+    }).join('');
+    libEl.querySelectorAll('input[type=checkbox]').forEach(function(cb){
+      cb.addEventListener('change', function(){
+        var name = cb.dataset.model;
+        var idx = state.sessions.map(function(s){ return s.name; }).indexOf(name);
+        if(cb.checked){
+          if(idx === -1){ state.sessions.push({name:name, answer:'', verdict:''}); }
+        }else{
+          if(idx !== -1 && state.sessions[idx].answer.trim() && !confirm('「'+ name +'」已有回答，确定移除该会话？')){ cb.checked = true; return; }
+          if(idx !== -1){ state.sessions.splice(idx, 1); }
+        }
+        save(); renderSessions(); renderModelLib();
+      });
+    });
+  }
+
+  function verdictClass(verdict){
+    return verdict ? 'on ' + verdict : '';
+  }
+
+  function renderSessions(){
+    sessionsEl.classList.toggle('grid-view', state.viewMode === 'grid');
+    $('viewToggle').querySelectorAll('button').forEach(function(b){
+      b.classList.toggle('on', b.dataset.view === state.viewMode);
+    });
+    sessionsEl.innerHTML = state.sessions.map(function(s, i){
+      var verdicts = [
+        {key:'good', label:'一致', cls:'good'},
+        {key:'mid', label:'存疑', cls:'mid'},
+        {key:'bad', label:'分歧', cls:'bad'}
+      ].map(function(v){
+        var on = s.verdict === v.key ? 'on ' + v.cls : '';
+        return '<span class="vtag '+ on +'" data-idx="'+ i +'" data-verdict="'+ v.key +'">'+ v.label +'</span>';
+      }).join('');
+      return ''+
+      '<div class="session" data-idx="'+ i +'">'+
+        '<div class="session-head">'+
+          '<span class="badge">'+ esc(s.name.charAt(0)) +'</span>'+
+          '<input type="text" class="s-name" value="'+ esc(s.name) +'" data-idx="'+ i +'" placeholder="模型名称">'+
+          '<div class="verdict">'+ verdicts +'</div>'+
+          '<button class="btn ghost sm s-del" data-idx="'+ i +'">删除</button>'+
+        '</div>'+
+        '<div class="session-body">'+
+          '<textarea class="s-answer" data-idx="'+ i +'" placeholder="粘贴该模型对上述问题的回答……"></textarea>'+
+        '</div>'+
+        '<div class="session-meta">'+
+          '<span><button class="btn ghost sm s-copy" data-idx="'+ i +'">复制回答</button></span>'+
+          '<span>会话 '+ (i+1) +' · 自动保存</span>'+
+        '</div>'+
+      '</div>';
+    }).join('');
+
+    sessionsEl.querySelectorAll('.s-name').forEach(function(el){
+      el.value = state.sessions[+el.dataset.idx].name;
+      el.addEventListener('input', function(){
+        state.sessions[+el.dataset.idx].name = el.value || '';
+        save();
+        renderSessions();
+        renderModelLib();
+      });
+    });
+    sessionsEl.querySelectorAll('.s-answer').forEach(function(el){
+      el.value = state.sessions[+el.dataset.idx].answer;
+      el.addEventListener('input', function(){
+        state.sessions[+el.dataset.idx].answer = el.value;
+        save();
+      });
+    });
+    sessionsEl.querySelectorAll('.vtag').forEach(function(el){
+      var i = +el.dataset.idx, v = el.dataset.verdict;
+      if(state.sessions[i].verdict === v) el.classList.add('on', v === 'good' ? 'good' : v === 'mid' ? 'mid' : 'bad');
+      el.addEventListener('click', function(){
+        state.sessions[i].verdict = state.sessions[i].verdict === v ? '' : v;
+        save();
+        renderSessions();
+      });
+    });
+    sessionsEl.querySelectorAll('.s-del').forEach(function(el){
+      el.addEventListener('click', function(){
+        state.sessions.splice(+el.dataset.idx, 1);
+        save();
+        renderSessions();
+        renderModelLib();
+      });
+    });
+    sessionsEl.querySelectorAll('.s-copy').forEach(function(el){
+      el.addEventListener('click', function(){
+        var s = state.sessions[+el.dataset.idx];
+        copyText('【模型】'+ s.name +'\n' + (s.answer.trim() || '(未填写)'), el, '已复制');
+      });
+    });
+    $('sessionCount').textContent = '共 ' + state.sessions.length + ' 个会话';
+  }
+
+  function buildTemplate(){
+    var q = state.question.trim();
+    var parts = [];
+    parts.push('【多模型会诊请求】');
+    parts.push('请作为独立的会诊专家回答以下问题，不要参考其他模型的回答。');
+    if(q) parts.push('\n' + q);
+    parts.push('请按以下结构回复：\n1) 直接结论\n2) 关键理由\n3) 潜在风险或补充建议');
+    return parts.join('\n');
+  }
+
+  function buildAllText(){
+    var t = [];
+    t.push('===== 多模型会诊记录 =====');
+    t.push('【统一提问】');
+    t.push(state.question.trim() || '(未填写)');
+    t.push('');
+    state.sessions.forEach(function(s, i){
+      t.push('【模型 ' + (i+1) + '】' + s.name + (s.verdict === 'good' ? ' [一致]' : s.verdict === 'mid' ? ' [存疑]' : s.verdict === 'bad' ? ' [分歧]' : ''));
+      t.push(s.answer.trim() || '(未填写)');
+      t.push('');
+    });
+    t.push('【会诊结论】');
+    t.push(state.conclusion.trim() || '(未填写)');
+    return t.join('\n');
+  }
+
+  $('question').addEventListener('input', function(){ state.question = this.value; save(); });
+  $('conclusion').addEventListener('input', function(){ state.conclusion = this.value; save(); });
+  $('clearQuestion').addEventListener('click', function(){ state.question=''; $('question').value=''; save(); });
+  $('addSession').addEventListener('click', function(){
+    state.sessions.push({name:'模型' + (state.sessions.length+1), answer:'', verdict:''});
+    save();
+    renderSessions();
+    sessionsEl.lastElementChild.scrollIntoView({behavior:'smooth', block:'start'});
+  });
+  $('copyTemplate').addEventListener('click', function(){
+    copyText(buildTemplate(), $('copyTemplate'), '已复制');
+  });
+  $('askAgent').addEventListener('click', function(){
+    copyText(buildAllText(), $('askAgent'), '已复制，粘贴到任意会话即可');
+  });
+  $('viewToggle').querySelectorAll('button').forEach(function(b){
+    b.addEventListener('click', function(){
+      state.viewMode = b.dataset.view;
+      save();
+      renderSessions();
+    });
+  });
+  $('exportAll').addEventListener('click', function(){
+    var area = $('exportArea');
+    area.textContent = buildAllText();
+    area.style.display = area.style.display === 'block' ? 'none' : 'block';
+  });
+
+  load();
+  $('question').value = state.question;
+  $('conclusion').value = state.conclusion;
+  renderSessions();
+  renderModelLib();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>禅道子任务分配工具</title>
+<style>
+  :root {
+    --bg: #f4f5f9;
+    --card: #ffffff;
+    --ink: #1f2333;
+    --muted: #7a7f92;
+    --line: #e7e9f0;
+    --brand1: #4f6ef7;
+    --brand2: #8a5cf6;
+    --ok: #22b573;
+    --err: #e5484d;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", sans-serif;
+    background: linear-gradient(180deg, #eef1fb 0%, var(--bg) 280px);
+    color: var(--ink);
+    min-height: 100vh;
+    padding: 28px 18px 60px;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 1180px; margin: 0 auto; }
+
+  .hero { text-align: center; margin: 10px 0 26px; }
+  .hero h1 {
+    font-size: 30px; font-weight: 800; letter-spacing: 1px;
+    background: linear-gradient(90deg, var(--brand1), var(--brand2));
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .hero p { color: var(--muted); font-size: 13px; margin-top: 8px; }
+
+  .card {
+    background: var(--card); border: 1px solid var(--line);
+    border-radius: 16px; padding: 20px 22px; margin-bottom: 18px;
+    box-shadow: 0 6px 20px rgba(40, 50, 100, .06);
+  }
+  .card h2 {
+    font-size: 15px; font-weight: 700; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card h2 .num {
+    display: inline-flex; width: 24px; height: 24px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--brand1), var(--brand2));
+    color: #fff; font-size: 13px; align-items: center; justify-content: center;
+  }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px; }
+  .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  input, select {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--line);
+    border-radius: 10px; font-size: 14px; color: var(--ink); background: #fafbfe;
+    outline: none; transition: border .15s, box-shadow .15s;
+  }
+  input:focus, select:focus { border-color: var(--brand1); box-shadow: 0 0 0 3px rgba(79,110,247,.13); background: #fff; }
+
+  .conn-row { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; }
+  .conn-row .field { flex: 1; min-width: 160px; }
+  .btn {
+    border: none; cursor: pointer; border-radius: 10px; padding: 10px 18px;
+    font-size: 14px; font-weight: 600; white-space: nowrap; transition: transform .1s, opacity .15s;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn-primary { background: linear-gradient(135deg, var(--brand1), var(--brand2)); color: #fff; box-shadow: 0 4px 14px rgba(79,110,247,.3); }
+  .btn-primary:hover { opacity: .93; }
+  .btn-ghost { background: #f1f3fa; color: var(--ink); border: 1px solid var(--line); }
+  .btn-ghost:hover { background: #e9ecf7; }
+  .btn-ok { background: linear-gradient(135deg, #23b374, #1d9d65); color: #fff; box-shadow: 0 4px 14px rgba(35,179,116,.3); }
+  .btn-danger { background: #fdecec; color: var(--err); border: 1px solid #f4cccc; }
+  .btn-danger:hover { background: #fbe0e0; }
+  .btn-mini { padding: 6px 10px; font-size: 12px; border-radius: 8px; }
+  .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+  .chk { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--muted); user-select: none; padding: 10px 2px; cursor: pointer; }
+  .chk input { width: auto; padding: 0; accent-color: var(--brand1); cursor: pointer; }
+
+  .status-dot { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--muted); padding: 8px 12px; border-radius: 10px; background: #f6f7fb; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; background: #c3c7d4; flex: none; }
+  .dot.on { background: var(--ok); box-shadow: 0 0 0 0 rgba(34,181,115,.5); animation: pulse 1.6s infinite; }
+  .dot.err { background: var(--err); }
+  @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(34,181,115,.5); } 70% { box-shadow: 0 0 0 8px rgba(34,181,115,0); } 100% { box-shadow: 0 0 0 0 rgba(34,181,115,0); } }
+
+  .hint { font-size: 12px; color: var(--muted); line-height: 1.7; }
+  .note {
+    display: none; background: #fff8e6; border: 1px solid #f3e3b3; color: #8a6d1f;
+    font-size: 13px; border-radius: 10px; padding: 10px 14px; margin-bottom: 14px; line-height: 1.7;
+  }
+  .note.show { display: block; }
+
+  /* 任务表格 */
+  .task-head {
+    display: grid; gap: 10px; padding: 0 4px 10px;
+    grid-template-columns: 150px 120px 120px 110px 80px 130px 130px 130px 130px;
+    font-size: 12px; color: var(--muted); font-weight: 600;
+  }
+  .task-row {
+    display: grid; gap: 10px; align-items: center; padding: 12px 4px;
+    grid-template-columns: 150px 120px 120px 110px 80px 130px 130px 130px 130px;
+    border-top: 1px solid var(--line); transition: background .15s;
+  }
+  .task-row:hover { background: #fafbff; }
+  .badge { display: inline-block; font-size: 11px; padding: 3px 9px; border-radius: 20px; font-weight: 600; }
+  .badge.pending { background: #eef0f6; color: var(--muted); }
+  .badge.created { background: #e7f0ff; color: var(--brand1); }
+  .badge.done { background: #e3f7ee; color: var(--ok); }
+  .badge.err { background: #fdecec; color: var(--err); }
+  .row-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  .toolbar { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .biglog { margin-top: 12px; display: none; background: #f7f8fc; border: 1px dashed var(--line); border-radius: 12px; padding: 14px; font-size: 12px; color: var(--muted); max-height: 220px; overflow: auto; white-space: pre-wrap; line-height: 1.7; }
+
+  @media (max-width: 980px) {
+    .task-head { display: none; }
+    .task-row { grid-template-columns: 1fr 1fr; gap: 10px 10px; background: #fafbfe; border: 1px solid var(--line); border-radius: 12px; margin-bottom: 10px; padding: 14px; }
+    .task-row .field { min-width: 0; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="hero">
+    <h1>禅道子任务分配工具</h1>
+    <p>批量创建 UI / UX 设计子任务并分配人员，随后一键标记完成。</p>
+  </div>
+
+  <!-- ① 连接设置 -->
+  <div class="card">
+    <h2><span class="num">1</span>连接禅道</h2>
+    <div class="grid">
+      <div class="field">
+        <label>代理地址（一般不用改）</label>
+        <input id="proxyUrl" value="http://localhost:8787" placeholder="http://localhost:8787">
+      </div>
+      <div class="field">
+        <label>禅道地址</label>
+        <input id="baseUrl" placeholder="http://192.168.1.10 或 http://192.168.1.10/zentao">
+      </div>
+      <div class="field">
+        <label>账号</label>
+        <input id="account" placeholder="登录账号">
+      </div>
+      <div class="field">
+        <label>密码</label>
+        <input id="password" type="password" placeholder="登录密码">
+      </div>
+    </div>
+    <div class="conn-row" style="margin-top:14px;">
+      <span class="status-dot"><span class="dot" id="dot"></span><span id="connText">未连接</span></span>
+      <button class="btn btn-primary" id="btnTest">连接测试</button>
+      <label class="chk"><input type="checkbox" id="rememberPwd">记住密码（仅本机自用建议勾选）</label>
+    </div>
+    <p class="hint" style="margin-top:12px;">
+      使用前请先在本机运行 <b>node zentao-proxy.js</b> 并保持窗口开启。禅道地址填到能看到 <b>api.php</b> 的位置，例如 <b>http://192.168.1.10:8080/zentao</b>。连接成功后会自动读取「项目」与「用户」列表——指派给将按姓名自动匹配禅道账号，无需手填。
+    </p>
+  </div>
+
+  <!-- ② 可选参数 -->
+  <div class="card">
+    <h2><span class="num">2</span>可选参数</h2>
+    <div class="grid">
+      <div class="field">
+        <label>父任务 ID（可选，填写则作为子任务创建）</label>
+        <input id="parentTaskId" type="number" placeholder="留空＝独立任务">
+      </div>
+      <div class="field">
+        <label>执行 ID（可选，若任务必须挂「执行」而非「项目」则填）</label>
+        <input id="execId" type="number" placeholder="留空＝使用项目创建">
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ 任务列表 -->
+  <div class="card">
+    <h2><span class="num">3</span>任务列表</h2>
+    <div class="note" id="connNote">还未连接禅道——请先完成「① 连接禅道」，连接成功后项目列表会自动加载到下方。</div>
+    <div class="task-head">
+      <span>项目</span><span>任务名称</span><span>任务类型</span><span>指派给</span><span>预计(h)</span>
+      <span>开始时间</span><span>截止日期</span><span>状态</span><span>操作</span>
+    </div>
+    <div id="taskList"></div>
+    <div class="toolbar" style="margin-top:16px;">
+      <button class="btn btn-ghost" id="btnAdd">＋ 添加任务行</button>
+      <button class="btn btn-primary" id="btnCreate">批量创建任务</button>
+      <button class="btn btn-ok" id="btnFinish">全部标记完成</button>
+      <button class="btn btn-danger" id="btnClear">清空列表</button>
+    </div>
+    <div class="biglog" id="biglog"></div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var STAFF = ['茅伟帅', '李昕', '宾凤玉', '胡煌标', '吴立勉'];
+  var TASK_NAMES = ['UI设计', 'UX设计'];
+  var TASK_TYPES = ['UI设计', 'UX设计', '设计', '界面', '开发', '测试'];
+  var ESTIMATES = [16, 24, 32];
+  // 项目名关键词 -> 默认指派人员组（取第一个为默认，可在下拉改）
+  var PROJECT_STAFF = [
+    { kw: '培训', staff: ['茅伟帅', '李昕'] },
+    { kw: '售后', staff: ['吴立勉'] },
+    { kw: '机电', staff: ['茅伟帅', '李昕'] },
+    { kw: '配件', staff: ['胡煌标'] },
+    { kw: '客服', staff: ['宾凤玉'] }
+  ];
+
+  var STORE_KEY = 'zentao_tool_state_v1';
+  var proxies = [];      // [{task}]
+  var projects = [];     // [{id, name}]
+  var nameMap = {};      // 禅道 realname -> account
+
+  function $(id) { return document.getElementById(id); }
+  function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]; }); }
+
+  // ---------- 状态持久化 ----------
+  function loadState() {
+    try { return JSON.parse(localStorage.getItem(STORE_KEY) || '{}'); } catch (e) { return {}; }
+  }
+  function saveState() {
+    try {
+      var s = {
+        baseUrl: $('baseUrl').value,
+        account: $('account').value,
+        proxyUrl: $('proxyUrl').value,
+        parentTaskId: $('parentTaskId').value,
+        execId: $('execId').value,
+        rememberPwd: $('rememberPwd').checked,
+        projects: projects,
+        nameMap: nameMap,
+        tasks: serializeTasks()
+      };
+      if ($('rememberPwd').checked) s.password = $('password').value;
+      localStorage.setItem(STORE_KEY, JSON.stringify(s));
+    } catch (e) {}
+  }
+
+  function serializeTasks() {
+    var out = [];
+    proxies.forEach(function (r) { out.push(r.task); });
+    return out;
+  }
+
+  // ---------- 代理调用 ----------
+  function proxyUrl() { return $('proxyUrl').value.replace(/\/+$/, ''); }
+  function baseUrl() { return $('baseUrl').value.trim(); }
+  function account() { return $('account').value.trim(); }
+  function password() { return $('password').value; }
+
+  async function callProxy(body) {
+    var resp = await fetch(proxyUrl() + '/proxy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    var data;
+    try { data = await resp.json(); } catch (e) { data = { error: '代理响应无法解析' }; }
+    return { status: resp.status, data: data };
+  }
+
+  function setConn(state, text) {
+    $('dot').className = 'dot' + (state === 'ok' ? ' on' : state === 'err' ? ' err' : '');
+    $('connText').textContent = text;
+  }
+
+  function extractId(data) {
+    if (!data) return null;
+    if (data.id) return data.id;
+    if (data.task && data.task.id) return data.task.id;
+    if (data.data && data.data.id) return data.data.id;
+    return null;
+  }
+
+  function zenError(data) {
+    if (!data) return '禅道未返回有效信息';
+    if (data.error) return data.error;
+    if (data.message) return data.message;
+    try { return JSON.stringify(data).slice(0, 300); } catch (e) { return String(data).slice(0, 300); }
+  }
+
+  // ---------- 连接 & 拉取项目/用户 ----------
+  $('btnTest').addEventListener('click', async function () {
+    var btn = this;
+    if (btn.disabled) return;
+    if (!baseUrl()) { setConn('err', '请填写禅道地址'); return; }
+    if (!account() || !password()) { setConn('err', '请填写账号和密码'); return; }
+
+    btn.disabled = true; btn.textContent = '连接中 …';
+    setConn('off', '连接中 …');
+    try {
+      var r = await callProxy({ baseUrl: baseUrl(), account: account(), password: password(), path: 'tokens' });
+      if (r.status === 200 || r.status === 201) {
+        setConn('ok', '已连接');
+        await Promise.all([loadProjects(), loadUsers()]);
+        saveState();
+      } else {
+        setConn('err', '连接失败：' + zenError(r.data));
+      }
+    } catch (e) {
+      setConn('err', '无法连接代理：' + e.message + '（请确认已运行 node zentao-proxy.js）');
+    }
+    btn.textContent = '连接测试';
+    btn.disabled = false;
+  });
+
+  async function loadProjects() {
+    try {
+      var r = await callProxy({ baseUrl: baseUrl(), account: account(), password: password(), path: 'projects?limit=1000', method: 'GET' });
+      var list = r.data && (r.data.projects || r.data.list);
+      if (Array.isArray(r.data)) list = r.data;
+      if ((r.status === 200 || r.status === 201) && Array.isArray(list) && list.length) {
+        projects = list.map(function (p) { return { id: p.id, name: p.name }; });
+      } else {
+        log('未能读取项目列表（' + zenError(r.data) + '），下方项目下拉将不可用。');
+      }
+    } catch (e) {
+      log('读取项目列表失败：' + e.message);
+    }
+    render();
+  }
+
+  async function loadUsers() {
+    try {
+      var r = await callProxy({ baseUrl: baseUrl(), account: account(), password: password(), path: 'users?limit=1000', method: 'GET' });
+      var list = r.data && (r.data.users || r.data.list);
+      if (Array.isArray(r.data)) list = r.data;
+      if ((r.status === 200 || r.status === 201) && Array.isArray(list)) {
+        nameMap = {};
+        list.forEach(function (u) {
+          var rn = String(u.realname || '').trim();
+          if (u.account && rn) nameMap[rn] = u.account;
+        });
+        log('已加载禅道用户 ' + Object.keys(nameMap).length + ' 名，指派给将按姓名自动匹配账号。');
+      } else {
+        log('未能读取用户列表，指派给将按中文名原样提交（若禅道要求英文账号，创建会失败）。');
+      }
+    } catch (e) {
+      log('读取用户列表失败：' + e.message + '。指派给将按中文名原样提交。');
+    }
+  }
+
+  // ---------- 任务行 ----------
+  function defaultStaffFor(name) {
+    for (var i = 0; i < PROJECT_STAFF.length; i++) {
+      if (name && name.indexOf(PROJECT_STAFF[i].kw) >= 0) return PROJECT_STAFF[i].staff[0] || '';
+    }
+    return '';
+  }
+
+  function resolveAssignee(name) {
+    return nameMap[name] || name;
+  }
+
+  function newTask() {
+    return {
+      projectId: '', projectName: '',
+      name: 'UI设计', type: 'UI设计', assignedTo: '',
+      estimate: 16, start: '', deadline: '',
+      status: 'pending', taskId: null
+    };
+  }
+
+  // 新行默认继承上一行内容，减少重复填写
+  function addRow(fromTask) {
+    var t = newTask();
+    if (fromTask) {
+      t.projectId = fromTask.projectId;
+      t.projectName = fromTask.projectName;
+      t.name = fromTask.name;
+      t.type = fromTask.type;
+      t.assignedTo = fromTask.assignedTo;
+      t.estimate = fromTask.estimate;
+      t.start = fromTask.start;
+      t.deadline = fromTask.deadline;
+    }
+    proxies.push({ task: t });
+    render();
+    saveState();
+  }
+
+  function render() {
+    var box = $('taskList');
+    box.innerHTML = '';
+    proxies.forEach(function (ref, idx) {
+      var t = ref.task;
+      var el = document.createElement('div');
+      el.className = 'task-row';
+      el.innerHTML =
+        projectSelect(t) +
+        fieldHtml('name', optionsSelect(TASK_NAMES, t.name, true)) +
+        fieldHtml('type', datalistInput('types_' + idx, TASK_TYPES, t.type)) +
+        fieldHtml('staff', optionsSelect(STAFF, t.assignedTo)) +
+        fieldHtml('est', datalistInput('est_' + idx, ESTIMATES, t.estimate)) +
+        fieldHtml('start', '<input type="date" value="' + esc(t.start) + '">') +
+        fieldHtml('dl', '<input type="date" value="' + esc(t.deadline) + '">') +
+        statusHtml(t) +
+        '<div class="row-actions"></div>';
+      box.appendChild(el);
+      bindRow(el, ref, idx);
+    });
+    $('connNote').classList.toggle('show', projects.length === 0);
+  }
+
+  function fieldHtml(key, inner) {
+    return '<div class="field" data-k="' + key + '">' + inner + '</div>';
+  }
+
+  // noEmpty 为 true 时不生成空选项（必选项）
+  function optionsSelect(list, val, noEmpty) {
+    var h = '<select>' + (noEmpty ? '' : '<option value="">—</option>');
+    list.forEach(function (v) {
+      h += '<option value="' + esc(v) + '"' + (v === val ? ' selected' : '') + '>' + esc(v) + '</option>';
+    });
+    return h + '</select>';
+  }
+
+  function datalistInput(dlId, list, val) {
+    var h = '<input list="' + dlId + '" value="' + esc(val) + '">' + '<datalist id="' + dlId + '">';
+    list.forEach(function (v) { h += '<option value="' + esc(v) + '">'; });
+    return h + '</datalist>';
+  }
+
+  function projectSelect(t) {
+    var h = '<div class="field" data-k="project"><select><option value="">—选项目—</option>';
+    projects.forEach(function (p) {
+      var sel = (String(p.id) === String(t.projectId)) ? ' selected' : '';
+      h += '<option value="' + esc(p.id) + '" data-name="' + esc(p.name) + '"' + sel + '>' + esc(p.name) + '</option>';
+    });
+    if (t.projectId && !projects.length) {
+      h += '<option value="' + esc(t.projectId) + '" selected>' + esc(t.projectName || t.projectId) + '</option>';
+    }
+    return h + '</select></div>';
+  }
+
+  function statusHtml(t) {
+    var cls = 'pending', txt = '待创建';
+    if (t.status === 'created') { cls = 'created'; txt = '已创建 #' + t.taskId; }
+    else if (t.status === 'done') { cls = 'done'; txt = '已完成'; }
+    else if (t.status === 'err') { cls = 'err'; txt = '失败·可重试'; }
+    return '<div class="field" data-k="status"><span class="badge ' + cls + '">' + txt + '</span></div>';
+  }
+
+  function bindRow(el, ref, idx) {
+    var t = ref.task;
+
+    // 选项目 → 自动带默认指派
+    var projSel = el.querySelector('[data-k="project"] select');
+    projSel.addEventListener('change', function () {
+      var opt = projSel.selectedOptions[0];
+      var nm = opt ? (opt.getAttribute('data-name') || opt.textContent) : '';
+      t.projectId = projSel.value;
+      t.projectName = nm;
+      var def = defaultStaffFor(nm);
+      if (def) {
+        t.assignedTo = def;
+        el.querySelector('[data-k="staff"] select').value = def;
+      }
+      saveState();
+    });
+
+    // 任务名称（必选，无空选项）
+    el.querySelector('[data-k="name"] select').addEventListener('change', function () { t.name = this.value; saveState(); });
+    // 任务类型
+    el.querySelector('[data-k="type"] input').addEventListener('change', function () { t.type = this.value; saveState(); });
+    // 指派给
+    el.querySelector('[data-k="staff"] select').addEventListener('change', function () { t.assignedTo = this.value; saveState(); });
+    // 预计（非法输入失焦回显原值，不静默改数）
+    var estInput = el.querySelector('[data-k="est"] input');
+    estInput.addEventListener('change', function () {
+      var n = Number(this.value);
+      if (!(n > 0)) { this.value = t.estimate; return; }
+      t.estimate = n;
+      saveState();
+    });
+    // 开始 / 截止
+    el.querySelector('[data-k="start"] input').addEventListener('change', function () { t.start = this.value; saveState(); });
+    el.querySelector('[data-k="dl"] input').addEventListener('change', function () { t.deadline = this.value; saveState(); });
+
+    // 操作按钮
+    var act = el.querySelector('.row-actions');
+    var delBtn = document.createElement('button');
+    delBtn.className = 'btn btn-danger btn-mini';
+    delBtn.textContent = '删除';
+    delBtn.addEventListener('click', function () {
+      proxies.splice(idx, 1);
+      render(); saveState();
+    });
+    act.appendChild(delBtn);
+
+    if (t.status === 'created') {
+      var finBtn = document.createElement('button');
+      finBtn.className = 'btn btn-ok btn-mini';
+      finBtn.textContent = '标记完成';
+      finBtn.addEventListener('click', function () { finishTask(ref, finBtn); });
+      act.appendChild(finBtn);
+    }
+  }
+
+  // ---------- 创建前校验 ----------
+  function validateTask(t, execId) {
+    if (!t.name) return '未选任务名称';
+    if (!t.assignedTo) return '未选指派给';
+    if (!t.projectId && !execId) return '未选项目';
+    if (!(Number(t.estimate) > 0)) return '预计工时需大于 0';
+    return null;
+  }
+
+  // ---------- 完成任务 ----------
+  async function finishTask(ref, btn) {
+    var t = ref.task;
+    if (!t.taskId || btn.disabled) return;
+    btn.disabled = true; btn.textContent = '完成中 …';
+    try {
+      var r = await callProxy({
+        baseUrl: baseUrl(), account: account(), password: password(),
+        path: 'tasks/' + t.taskId + '/finish', method: 'POST',
+        data: { consumed: Number(t.estimate) || 0, comment: '由禅道任务工具标记完成' }
+      });
+      if (r.status === 200 || r.status === 201) {
+        t.status = 'done';
+        log('✅ 任务 #' + t.taskId + '（' + t.name + '）已标记完成');
+      } else {
+        var msg = zenError(r.data);
+        log('❌ 任务 #' + t.taskId + ' 完成失败：' + msg);
+        if (/start|开始/i.test(msg)) log('　提示：未开始（wait）的任务可能需先开始才能标记完成。');
+      }
+    } catch (e) {
+      log('❌ 完成任务出错：' + e.message);
+    }
+    render(); saveState();
+  }
+
+  // ---------- 批量创建 ----------
+  $('btnCreate').addEventListener('click', async function () {
+    var btn = this;
+    if (btn.disabled) return;
+    var todo = proxies.filter(function (r) { return r.task.status === 'pending' || r.task.status === 'err'; });
+    if (!todo.length) { log('没有待创建（或失败待重试）的任务。'); return; }
+
+    if (!baseUrl() || !account() || !password()) {
+      var miss = [];
+      if (!baseUrl()) miss.push('禅道地址');
+      if (!account()) miss.push('账号');
+      if (!password()) miss.push('密码（未勾选记住密码时，刷新页面后需重新输入）');
+      log('请先在「① 连接禅道」补全：' + miss.join('、'));
+      return;
+    }
+    if (!confirm('将向禅道实际创建 ' + todo.length + ' 条任务，确定继续？')) return;
+
+    btn.disabled = true;
+    var parentId = $('parentTaskId').value;
+    var execId = $('execId').value;
+    var okCount = 0, failCount = 0;
+    log('开始批量创建，共 ' + todo.length + ' 条 ……');
+
+    // 姓名映射不到账号的提前预警
+    if (Object.keys(nameMap).length) {
+      var unmapped = [];
+      todo.forEach(function (r) {
+        if (r.task.assignedTo && !nameMap[r.task.assignedTo] && unmapped.indexOf(r.task.assignedTo) < 0) {
+          unmapped.push(r.task.assignedTo);
+        }
+      });
+      if (unmapped.length) log('⚠️ 禅道用户列表中未匹配到：' + unmapped.join('、') + '，将按中文名原样提交；若失败请检查这些用户在禅道中的姓名设置。');
+    }
+
+    for (var i = 0; i < todo.length; i++) {
+      var ref = todo[i], t = ref.task;
+      btn.textContent = '创建中 ' + (i + 1) + '／' + todo.length + ' …';
+
+      var v = validateTask(t, execId);
+      if (v) { t.status = 'err'; failCount++; log('⚠️ 「' + t.name + '」' + v + '，已跳过（补全后可直接重试）'); saveState(); continue; }
+
+      var data = {
+        name: t.name,
+        type: t.type,
+        assignedTo: resolveAssignee(t.assignedTo),
+        estimate: Number(t.estimate) || 0
+      };
+      if (t.deadline) data.deadline = t.deadline;
+      if (t.start) data.estStarted = t.start;
+      if (execId) data.execution = Number(execId);
+      else data.project = Number(t.projectId);
+      if (parentId) data.parent = Number(parentId);
+
+      try {
+        var r = await callProxy({ baseUrl: baseUrl(), account: account(), password: password(), path: 'tasks', method: 'POST', data: data });
+        var id = extractId(r.data);
+        if ((r.status === 200 || r.status === 201) && id) {
+          t.taskId = id; t.status = 'created'; okCount++;
+          log('✅ 已创建 #' + id + '：' + t.name + ' → ' + t.assignedTo + '（' + data.assignedTo + '，预计 ' + t.estimate + 'h）');
+          saveState(); // 逐条落盘，中途刷新页面不重复创建
+        } else {
+          t.status = 'err'; failCount++;
+          var msg = zenError(r.data);
+          log('❌ 「' + t.name + '」创建失败：' + msg);
+          if (/execut|执行/i.test(msg)) log('　提示：新版禅道的任务可能需要挂在「执行」下，请在「② 可选参数」填执行 ID 后重试。');
+        }
+      } catch (e) {
+        t.status = 'err'; failCount++;
+        log('❌ 「' + t.name + '」异常：' + e.message);
+      }
+    }
+
+    log('批量创建结束：成功 ' + okCount + ' 条，失败 ' + failCount + ' 条。');
+    btn.textContent = '批量创建任务';
+    btn.disabled = false;
+    render(); saveState();
+  });
+
+  // ---------- 全部完成 ----------
+  $('btnFinish').addEventListener('click', async function () {
+    var btn = this;
+    if (btn.disabled) return;
+    var created = proxies.filter(function (r) { return r.task.status === 'created'; });
+    if (!created.length) { log('没有「已创建」状态可完成的任务。'); return; }
+    if (!confirm('将把 ' + created.length + ' 条任务在禅道中标记完成，确定继续？')) return;
+
+    btn.disabled = true;
+    var cnt = 0;
+    log('开始标记完成，共 ' + created.length + ' 条 ……');
+    for (var i = 0; i < created.length; i++) {
+      var ref = created[i], t = ref.task;
+      btn.textContent = '完成中 ' + (i + 1) + '／' + created.length + ' …';
+      try {
+        var r = await callProxy({
+          baseUrl: baseUrl(), account: account(), password: password(),
+          path: 'tasks/' + t.taskId + '/finish', method: 'POST',
+          data: { consumed: Number(t.estimate) || 0, comment: '由禅道任务工具标记完成' }
+        });
+        if (r.status === 200 || r.status === 201) { t.status = 'done'; cnt++; saveState(); }
+        else log('❌ 任务 #' + t.taskId + ' 完成失败：' + zenError(r.data));
+      } catch (e) {
+        log('❌ 任务 #' + t.taskId + ' 异常：' + e.message);
+      }
+    }
+    log('完成操作结束：成功 ' + cnt + ' ／ ' + created.length + ' 条。');
+    btn.textContent = '全部标记完成';
+    btn.disabled = false;
+    render(); saveState();
+  });
+
+  // ---------- 工具按钮与配置 ----------
+  $('btnAdd').addEventListener('click', function () {
+    addRow(proxies.length ? proxies[proxies.length - 1].task : null);
+  });
+  $('btnClear').addEventListener('click', function () {
+    if (!confirm('确定清空所有任务行吗？（不会影响已在禅道创建的任务）')) return;
+    proxies = [];
+    render(); saveState();
+  });
+
+  // 配置字段变化即保存，避免刷新丢失
+  ['proxyUrl', 'baseUrl', 'account', 'password', 'parentTaskId', 'execId'].forEach(function (id) {
+    $(id).addEventListener('change', saveState);
+  });
+  $('rememberPwd').addEventListener('change', function () {
+    if (!this.checked) saveState();
+  });
+
+  function log(msg) {
+    var el = $('biglog');
+    el.style.display = 'block';
+    var ts = new Date().toLocaleTimeString('zh-CN', { hour12: false });
+    el.textContent = el.textContent + '［' + ts + '］' + msg + '\n';
+    el.scrollTop = el.scrollHeight;
+  }
+
+  // ---------- 初始化 ----------
+  function init() {
+    var s = loadState();
+    if (s.baseUrl) $('baseUrl').value = s.baseUrl;
+    if (s.account) $('account').value = s.account;
+    if (s.proxyUrl) $('proxyUrl').value = s.proxyUrl;
+    if (s.parentTaskId) $('parentTaskId').value = s.parentTaskId;
+    if (s.execId) $('execId').value = s.execId;
+    if (s.rememberPwd && s.password) { $('rememberPwd').checked = true; $('password').value = s.password; }
+    if (Array.isArray(s.projects)) projects = s.projects;
+    if (s.nameMap) nameMap = s.nameMap;
+    if (Array.isArray(s.tasks) && s.tasks.length) {
+      proxies = s.tasks.map(function (t) { return { task: t }; });
+      render();
+    } else {
+      addRow(null);
+    }
+    // 勾选了记住密码且配置齐全时，静默自动重连
+    if ($('rememberPwd').checked && baseUrl() && account() && password()) {
+      $('btnTest').click();
+    }
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

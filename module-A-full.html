@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 交互设计 · A 入口设计</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#111214; --paper:#f5f4f1; --anchor:#FF2A00; --anchor-d:#cc2200;
+    --line:#c9c7c2; --grey:#6b6b66; --chip:#e9e7e2;
+    --mono:"IBM Plex Mono",monospace; --sans:"Archivo","Noto Sans SC",sans-serif;
+    --disp:"Space Grotesk","Noto Sans SC",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%;overflow:hidden;background:var(--ink)}
+  body{font-family:var(--sans);-webkit-font-smoothing:antialiased;color:var(--ink)}
+
+  /* ===== Deck 容器 + 翻页 ===== */
+  #deck{position:fixed;top:0;left:0;width:10000vw;height:100vh;display:flex;flex-wrap:nowrap;transition:transform .7s cubic-bezier(.77,0,.175,1);will-change:transform;background:var(--paper)}
+  .slide{width:100vw;height:100vh;flex:0 0 100vw;overflow-y:auto;background:var(--paper);
+    padding:7vh 5vw 11vh;position:relative;scrollbar-width:thin}
+
+  /* 顶栏 */
+  .hbar{position:fixed;top:0;left:0;right:0;z-index:20;height:52px;
+    display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:18px;padding:0 3vw;
+    background:var(--paper);border-bottom:1px solid var(--ink)}
+  .h-idx{font-family:var(--mono);font-size:12px;border:1.5px solid var(--ink);padding:3px 7px;font-weight:500}
+  .h-crumb{font-family:var(--mono);font-size:11px;letter-spacing:.15em;color:var(--grey);text-transform:uppercase;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .h-pos{font-family:var(--mono);font-size:11px;color:var(--grey)}
+  .h-pos b{color:var(--anchor)}
+
+  /* ===== 导航轨道 A-G ===== */
+  .track{position:fixed;left:3vw;right:3vw;bottom:0;z-index:20;height:64px;
+    display:flex;align-items:stretch;gap:2px;padding-bottom:14px}
+  .track .navslot{flex:1;display:flex;flex-direction:column;gap:4px;cursor:pointer;background:none;border:none;padding:0;color:var(--ink)}
+  .track .navslot .bar{flex:1;background:var(--line);transition:background .2s;position:relative}
+  .track .navslot.active .bar{background:var(--ink)}
+  .track .navslot .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--grey);text-align:left}
+  .track .navslot.active .lbl{color:var(--ink);font-weight:600}
+
+  /* 进度点（页内导航）*/
+  .pager{position:fixed;bottom:74px;right:3vw;z-index:20;display:flex;gap:5px;flex-wrap:wrap;max-width:38vw;justify-content:flex-end}
+  .pager button{width:8px;height:8px;border-radius:0;border:1px solid var(--ink);background:transparent;cursor:pointer;padding:0;opacity:.5;transition:.2s}
+  .pager button.on{background:var(--anchor);border-color:var(--anchor);opacity:1}
+
+  /* ===== 通用页面块 ===== */
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--anchor);text-transform:uppercase;margin-bottom:10px}
+  .huge{font-family:var(--disp);font-weight:800;line-height:.9;letter-spacing:-.03em;text-transform:uppercase}
+  .body-txt{font-size:15px;color:#2c2c2e;line-height:1.75;font-weight:300}
+
+  /* 目录/索引页 */
+  .cover{display:flex;flex-direction:column;justify-content:center}
+  .cover .hero-no{font-family:var(--disp);font-weight:800;font-size:clamp(90px,20vw,260px);line-height:.8;color:var(--ink);letter-spacing:-.04em}
+  .cover .hero-txt{font-family:var(--disp);font-weight:800;font-size:clamp(34px,6vw,76px);line-height:.95;text-transform:uppercase;margin-top:20px}
+  .cover .hero-txt em{color:var(--anchor);font-style:normal}
+  .cover .hero-sub{margin-top:22px;max-width:64ch;font-weight:300;color:#3a3a3c}
+
+  .idx-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-top:34px}
+  .idx-item{background:var(--paper);padding:16px;display:flex;gap:14px;align-items:baseline;text-decoration:none;color:var(--ink);transition:.15s}
+  .idx-item:hover{background:#fff}
+  .idx-item .no{font-family:var(--mono);font-size:22px;color:var(--anchor);font-weight:600}
+  .idx-item .tx .t{font-family:var(--disp);font-weight:700;font-size:15px;text-transform:uppercase}
+  .idx-item .tx .d{font-family:var(--mono);font-size:10px;color:var(--grey);margin-top:2px;letter-spacing:.05em}
+
+  /* 模式总览网格 */
+  .grid-over{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);margin-top:22px}
+  .ov{background:var(--paper);padding:18px 16px;display:flex;flex-direction:column;gap:7px;cursor:pointer;border:none;text-align:left;color:var(--ink);transition:.15s}
+  .ov:hover{background:#fff}
+  .ov .emo{font-size:26px}
+  .ov .g{font-family:var(--mono);font-size:9px;letter-spacing:.1em;color:var(--grey);text-transform:uppercase}
+  .ov .n{font-family:var(--disp);font-weight:600;font-size:14.5px}
+  .ov .f{font-size:11.5px;color:#666;font-weight:300;flex:1}
+
+  /* 详情页双栏 */
+  .det{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:1px;background:var(--line);border:1px solid var(--line);margin-top:16px}
+  .det .dcol{background:var(--paper);padding:20px 22px}
+  .det .dcol h3{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--anchor);margin-bottom:12px;border-bottom:2px solid var(--ink);padding-bottom:8px}
+  .field{margin-bottom:13px}
+  .field .fl{font-family:var(--mono);font-size:10px;color:var(--grey);text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px}
+  .field .fv{font-size:13.5px;color:#2c2c2e;line-height:1.65;font-weight:300}
+  .field .fv ul{padding-left:16px}
+  .field .fv li{margin-bottom:2px}
+  .tagline{font-family:var(--mono);font-size:10px;color:var(--grey);letter-spacing:.05em;margin-top:2px}
+
+  /* 决策矩阵页 */
+  .mat-head{display:grid;grid-template-columns:60px 1fr;gap:18px;align-items:center;padding-top:14px}
+  .sec-no{font-family:var(--mono);font-size:14px;color:var(--anchor);font-weight:500}
+  .sec-title{font-family:var(--disp);font-weight:700;font-size:clamp(20px,3vw,30px);text-transform:uppercase;letter-spacing:-.01em}
+  .mat-wrap{margin-top:14px;overflow-x:auto}
+  table.mat{width:100%;border-collapse:collapse;font-size:12.5px}
+  .mat th{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--grey);text-align:left;padding:8px;border-bottom:2px solid var(--ink);white-space:nowrap}
+  .mat td{padding:9px 8px;border-bottom:1px solid var(--line);white-space:nowrap}
+  .mat td.dots{font-family:var(--mono);font-size:11px}
+  .mat tr:hover td{background:#fff}
+  .mat .rn{font-family:var(--disp);font-weight:600}
+  .mat .dest{font-family:var(--mono);font-size:10px;color:var(--anchor);font-weight:500}
+  .dim-hint{font-family:var(--mono);font-size:10px;color:var(--grey);letter-spacing:.06em;margin-top:6px}
+
+  /* 双栏页面 */
+  .cols{display:grid;grid-template-columns:1.2fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);margin-top:14px}
+  .col{background:var(--paper);padding:20px 22px}
+  .col h3{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;border-bottom:2px solid var(--ink);padding-bottom:8px;margin-bottom:14px}
+  .combo{margin-bottom:12px;padding:12px;border-left:3px solid var(--ink);background:#faf9f7}
+  .combo .t{font-weight:700;font-size:13px;font-family:var(--disp)}
+  .combo .f{font-family:var(--mono);font-size:11px;color:var(--anchor);margin-top:3px}
+  .x{display:flex;gap:9px;font-size:13px;margin-bottom:10px;align-items:baseline;font-weight:300}
+  .x .n{font-family:var(--mono);color:var(--anchor);font-weight:700}
+
+  .btnrow{margin-top:20px;display:flex;gap:10px;flex-wrap:wrap}
+  .pbtn{font-family:var(--mono);font-size:11px;border:1.5px solid var(--ink);background:transparent;padding:8px 14px;cursor:pointer;color:var(--ink);letter-spacing:.05em;transition:.15s;text-transform:uppercase}
+  .pbtn:hover{background:var(--ink);color:var(--paper)}
+  .pbtn.solid{background:var(--anchor);border-color:var(--anchor);color:#fff}
+  .pbtn.solid:hover{background:var(--anchor-d)}
+
+  .hint{position:fixed;left:3vw;bottom:78px;z-index:20;font-family:var(--mono);font-size:10px;color:var(--grey);letter-spacing:.06em}
+  .foot-credit{position:absolute;left:3vw;top:64px;font-family:var(--mono);font-size:10px;color:var(--grey)}
+
+  @media(max-width:900px){.det,.cols{grid-template-columns:1fr}.det .dcol{padding:14px 16px}}
+</style>
+</head>
+<body>
+
+<div class="hbar">
+  <span class="h-idx">A</span>
+  <span class="h-crumb" id="crumb">AI 入口设计 · The Entry</span>
+  <span class="h-pos"><b id="posCur">1</b> / <span id="posTot">1</span></span>
+</div>
+
+<div class="hint">← → 翻页 · 顶部色条切模块</div>
+
+<div class="track" id="track"></div>
+<div class="pager" id="pager"></div>
+
+<!-- ============ SLIDES ============ -->
+<div id="deck">
+
+<!-- P1 封面 -->
+<section class="slide cover">
+  <div class="hero-no">A</div>
+  <div class="hero-txt">AI 入口<br>设计<em>.</em></div>
+  <p class="body-txt" style="max-width:70ch;margin-top:22px">决定用户在什么时刻、从哪里唤起 AI，以及系统会带入哪些任务上下文。<br>好的入口不只要容易找到，更要贴近当前任务，并让用户清楚点击后会发生什么。</p>
+  <div class="btnrow">
+    <button class="pbtn solid" onclick="go(1)">查看 8 种入口 →</button>
+    <button class="pbtn" onclick="go(6)">跳转决策矩阵</button>
+  </div>
+  <div class="foot-credit">AI 交互设计图鉴 · Module A · 源 youthce.com</div>
+</section>
+
+<!-- P2 总览：8 入口 -->
+<section class="slide">
+  <div class="kicker">Module A · The Entries</div>
+  <div class="sec-title" style="font-size:clamp(22px,3.4vw,36px)">八种入口 · 点击查看设计细节</div>
+  <p class="body-txt" style="margin-top:6px;font-size:13.5px;color:#555">入口分四类：常驻 · 上下文 · 效率 · 新手。点击任意卡片进入完整设计说明。</p>
+  <div class="grid-over" id="overviewGrid"></div>
+</section>
+
+<!-- P3~P10 入口详情（JS 生成） -->
+<!-- P11 决策矩阵 -->
+<section class="slide">
+  <div class="sec-head" style="padding-top:4px"><span class="sec-no">A·M</span><span class="sec-title">决策矩阵 · 选择适合此刻的入口</span></div>
+  <p class="body-txt" style="font-size:13px;color:#666;margin-top:6px">● 高 ○ 低 · 评分用于比较相对特征，不代表都应采用高分入口。</p>
+  <div class="mat-wrap" id="matrixArea"></div>
+  <div class="btnrow"><button class="pbtn" onclick="go(7)">回到总览</button></div>
+</section>
+
+<!-- P12 组合方案 -->
+<section class="slide">
+  <div class="sec-head" style="padding-top:4px"><span class="sec-no">A·C</span><span class="sec-title">组合方案 · 主 + 快捷 + 兜底</span></div>
+  <p class="body-txt" style="font-size:13.5px;color:#555;margin-top:6px">入口不是越多越好，每类承担不同角色，并保持动作结果一致。</p>
+  <div class="cols" style="margin-top:12px">
+    <div class="col"><h3>组合方案</h3>
+      <div class="combo"><div class="t">AI Chat</div><div class="f">导航入口 → 空状态引导 → 命令面板</div></div>
+      <div class="combo"><div class="t">Copilot</div><div class="f">导航兜底 → 工具栏 → 划词 / 就近触发</div></div>
+      <div class="combo"><div class="t">Agent</div><div class="f">主入口 → 任务快捷项 → 悬浮状态提醒</div></div>
+    </div>
+    <div class="col"><h3>常见反例 · 越醒目越要负责</h3>
+      <div class="x"><span class="n">×</span>同一页面多个功能重复的 AI 入口</div>
+      <div class="x"><span class="n">×</span>只放魔法图标，没有文字/提示/业务动作名</div>
+      <div class="x"><span class="n">×</span>打开 AI 丢失选区与页面上下文</div>
+      <div class="x"><span class="n">×</span>依赖悬停/右键，无移动端与键盘替代</div>
+      <div class="x"><span class="n">×</span>首次引导、红点和动画反复无法永久关闭</div>
+    </div>
+  </div>
+</section>
+
+<!-- P13 上线前检查 -->
+<section class="slide">
+  <div class="sec-head" style="padding-top:4px"><span class="sec-no">A·Q</span><span class="sec-title">上线前检查 · 能被看见≠设计完成</span></div>
+  <div class="check-area" id="checkArea" style="margin-top:14px"></div>
+</section>
+
+</div>
+
+<script>
+/* ============ 数据 ============ */
+const DATA = {
+  crumb: "AI 入口设计 · The Entry",
+  overview:[
+    {emo:"🧭",g:"常驻入口",n:"导航栏按钮",f:"最稳定的一级 AI 功能入口",dest:"核心 AI 能力"},
+    {emo:"🔵",g:"常驻入口",n:"悬浮球",f:"跨页面随时唤起，可拖动吸边",dest:"跨页面随时唤起"},
+    {emo:"🛠️",g:"常驻入口",n:"工具栏图标",f:"编辑场景内即时改写总结",dest:"编辑器 Copilot"},
+    {emo:"✍️",g:"上下文入口",n:"划词唤起",f:"选区即任务上下文",dest:"文字局部处理"},
+    {emo:"🖱️",g:"上下文入口",n:"右键菜单",f:"低频进阶对象操作",dest:"桌面端进阶操作"},
+    {emo:"📍",g:"上下文入口",n:"就近触发",f:"段落单元格卡片级局部任务",dest:"对象级局部任务"},
+    {emo:"⌨️",g:"效率入口",n:"命令面板",f:"⌘K 不离开键盘启动任务",dest:"熟练用户提效"},
+    {emo:"🪧",g:"新手入口",n:"空状态引导",f:"首次进入给第一个真实任务",dest:"新手首次成功"}
+  ]
+};
+
+/* 入口详情数据（全字段） */
+const ENTRIES = [
+ {name:"导航栏按钮",icon:"🧭",cat:"常驻入口",
+  desc:"导航栏按钮把 AI 放在产品最稳定的位置，适合作为用户反复进入的一级功能入口。",
+  use:"AI 是产品核心卖点、需要高曝光，或要在用户心智里确立「这是个 AI 产品」时。",
+  diff:"可发现性最高、位置最稳定，但与用户正在处理的具体内容距离较远，也占用稀缺的一级导航空间。",
+  how:["文字标签 + 图标，别只放图标（可发现性）","有选中/激活态，与面板开合联动","位置稳定、跨页面一致"],
+  trade:"导航位是稀缺资源，放上去就要为它的点击率负责；若 AI 还不够高频或成熟，占据一级入口反而喧宾夺主。",
+  refs:"Gmail Gemini · Slack · Linear",
+  avoid:"AI 仍是低频试验能力，或无法跨页面保持稳定体验时，不要过早占据一级导航资源。",
+  states:["默认","悬停 / 聚焦","当前页","面板展开","新结果","不可用"],
+  metrics:["导航点击率","任务发起率","重复访问率"],
+  rel:"主任务入口 · 导航项 · 状态徽标 · 侧边面板",
+  trigger:"始终位于稳定导航位置；进入后保留当前页面作为可选上下文。入口激活状态要和页面/侧栏/面板开合保持同步。",
+  platform:"桌面可用顶栏或侧栏；移动端进入主导航菜单或底部一级入口，避免只藏在多层汉堡菜单里。",
+  a11y:"使用真实导航链接或按钮并标识当前状态；图标旁保留文字标签。名称表达价值，例如「生成周报」而非笼统的「智能」。"},
+ {name:"悬浮球",icon:"🔵",cat:"常驻入口",
+  desc:"悬浮球是始终停留在界面边缘的全局入口，用户滚动页面或进入深层内容后仍可随时唤起 AI。",
+  use:"需要全局常驻、随时可唤起，又不想长期占用固定版面；尤其适合内容很长、需持续滚动的编辑类产品。",
+  diff:"比导航按钮更靠近当前内容，不随页面滚动消失；代价是持续占用视觉注意力，可能遮挡内容。",
+  how:["可拖拽 + 自动吸边，不遮挡正文","红点/数字做未读或建议提醒","点击展开面板、再点收起，状态清晰","沉浸编辑时也保持可达"],
+  trade:"移动端易误触，需有收起态与足够安全边距；长期悬浮会和正文争夺注意力，默认应低调、激活时才强调。",
+  refs:"微软 365 Copilot · Intercom · Crisp",
+  avoid:"页面存在固定底部操作、局部任务远多于全局任务，或悬浮按钮会遮挡正文和关键控件时，不应使用。",
+  states:["默认","悬停 / 聚焦","新提醒","拖动中","面板展开","不可用"],
+  metrics:["入口点击率","唤起后任务发起率","误触关闭率"],
+  rel:"AI 唤起 · 继续任务 · 浮动按钮 · 徽标 · 侧边面板",
+  trigger:"常驻显示；点击或键盘确认后展开面板。若有新结果，徽标只表达状态，不能未经允许直接打开。默认携带当前页面或项目上下文，并在面板顶部说明范围。",
+  platform:"桌面可拖动并自动吸边；移动端保持稳定位置，避开底部导航、键盘和安全区域，不把拖动作为必要操作。",
+  a11y:"使用有名称的按钮，支持 Enter/Space 与清晰焦点；提醒不能只靠红点颜色；持续呼吸动画应允许减少。文案优先写「AI 助手」或具体任务。"},
+ {name:"工具栏图标",icon:"🛠️",cat:"常驻入口",
+  desc:"工具栏入口把 AI 作为编辑能力的一部分，用户无需离开当前工作区就能执行改写、总结或生成。",
+  use:"文档、表格、设计稿等编辑场景内，对当前正在写的内容做即时处理。",
+  diff:"比导航入口更贴近当前任务，比划词入口覆盖范围更广；但上下文通常只精确到当前文档或编辑器。",
+  how:["紧贴编辑区，图标语义清晰（✦/魔法棒等约定）","与其他工具风格统一、不突兀","通常配合「选中内容」一起使用"],
+  trade:"工具条空间有限，图标一多就拥挤；AI 项要有足够辨识度，否则被淹没在一排格式按钮里。",
+  refs:"WPS AI · Figma · Canva",
+  avoid:"页面不是编辑或操作场景、AI 不依赖当前内容，或工具栏已经高度拥挤时应避免。",
+  states:["默认","悬停 / 聚焦","已有选区","禁用","菜单展开","执行中"],
+  metrics:["工具栏使用率","任务完成率","执行后撤销率"],
+  rel:"快捷任务 · 图标按钮 · 工具提示 · 动作菜单",
+  trigger:"在编辑器获得焦点或存在可处理内容时可用；若依赖选区，未选中内容时应禁用并解释原因。打开后默认携带当前文档或编辑对象。",
+  platform:"桌面可进入固定工具栏；移动端收进选中文本后的操作条或「更多」菜单，保留足够触控面积。",
+  a11y:"图标按钮必须提供可访问名称与工具提示；禁用状态不能只降低透明度。文案直接写结果，如「改写」「生成摘要」。"},
+ {name:"划词唤起",icon:"✍️",cat:"上下文入口",
+  desc:"用户选中一段内容后才出现 AI 操作条，系统可直接把选区作为任务上下文。",
+  use:"针对「选中的具体内容」做即时操作，且操作类型相对固定、可枚举。",
+  diff:"上下文精度高于工具栏和导航入口，默认不占空间；缺点是用户必须先完成「选中内容」这个动作。",
+  how:["浮条紧贴选区上方，不遮住选中内容","只放最高频的几个动作，避免长菜单","跟随选区变化、选区消失即收起","AI 项与普通格式操作做视觉区分"],
+  trade:"选区一旦丢失要立刻收起，否则浮条悬空很怪；动作堆太多会让浮条变长，失去「轻」的优势。",
+  refs:"Notion · Craft · 沉浸式翻译",
+  avoid:"主要对象不是文字、移动端占比很高，或选中内容涉及敏感信息且读取范围无法说明时应避免。",
+  states:["无选区","有效选区","浮条出现","执行中","结果返回","选区丢失"],
+  metrics:["选区触发率","任务完成率","浮条关闭率"],
+  rel:"上下文推荐 · 选区浮条 · 快捷任务 · 命令菜单",
+  trigger:"仅在存在有效选区时出现，并明确本次操作只读取所选内容；选区变化或失焦后及时收起，执行期间保存原选区引用。",
+  platform:"桌面端靠近选区上方显示；移动端依赖系统选区菜单或底部操作条，避免浮层被虚拟键盘遮挡。",
+  a11y:"不能只依赖鼠标划选；支持键盘选择文本后触发。浮条出现时不强抢焦点，关闭后焦点回到原文。动作使用「改写选中内容」等明确文案。"},
+ {name:"右键菜单",icon:"🖱️",cat:"上下文入口",
+  desc:"右键菜单把 AI 动作放进对象原有的操作路径，适合低频、进阶且依赖具体对象的任务。",
+  use:"进阶用户；需要按选中对象的类型，提供不同的上下文动作时。",
+  diff:"几乎不占界面空间，比常驻入口更克制；但发现性最低，而且不能直接照搬到移动端。",
+  how:["AI 项单独分组、带图标，与系统项区隔","遵循系统右键的排序与习惯","菜单项随当前选中对象动态变化"],
+  trade:"发现性很低——多数用户不会主动右键，必须配合显性入口；移动端没有右键，需另设触发方式。",
+  refs:"VS Code · Cursor · Figma",
+  avoid:"目标用户以新手或移动端用户为主，且没有其他显性入口兜底时，不能只依赖右键菜单。",
+  states:["无目标","菜单展开","项目聚焦","当前不可用","执行中","已完成"],
+  metrics:["右键触达率","AI 菜单使用率","无操作关闭率"],
+  rel:"对象操作 · 上下文菜单 · 菜单项 · 分组线",
+  trigger:"用户在明确对象上打开上下文菜单时出现；菜单项随对象类型变化，执行前保留对象引用与选中状态。",
+  platform:"适合桌面端鼠标与触控板；移动端必须提供长按菜单、对象更多按钮或其他显性入口，不能直接照搬右键。",
+  a11y:"同时支持 Shift+F10 或菜单键；上下箭头移动、Enter 执行、Esc 返回原对象。AI 动作应独立分组并写清作用对象。"},
+ {name:"就近触发",icon:"📍",cat:"上下文入口",
+  desc:"就近入口贴在段落、单元格或卡片旁边，让用户直接对当前对象执行 AI 操作。",
+  use:"段落级 / 单元格级 / 卡片级的局部、精细操作。",
+  diff:"比工具栏更精确，比划词入口少一步选择操作；但页面对象过多时容易产生大量图标和视觉噪音。",
+  how:["默认隐藏，hover 到该对象才出现","紧贴操作对象、指向明确","克制使用，别给每个元素都挂图标"],
+  trade:"图标过多会让界面显得「吵」、显脏；hover 才出现对触屏不友好，需为移动端另设触发（如长按）。",
+  refs:"Notion · Coda · 飞书多维表格",
+  avoid:"页面对象密度很高、每个对象都会出现图标，或产品完全依赖触屏且没有长按替代方式时应避免。",
+  states:["隐藏","悬停 / 聚焦","建议出现","菜单展开","执行中","已忽略"],
+  metrics:["入口曝光率","建议采纳率","重复忽略率"],
+  rel:"上下文推荐 · 行内按钮 · 工具提示 · 弹出菜单",
+  trigger:"用户悬停、聚焦或选中单个内容对象时出现；入口携带当前段落、单元格或卡片标识，不默认扩大读取范围。",
+  platform:"桌面端可在对象边缘渐显；移动端改为对象更多按钮、滑动动作或长按菜单，不能依赖 hover。",
+  a11y:"对象获得键盘焦点时同样显示入口；图标需要名称与工具提示，不能造成布局跳动。文案写清「总结这一段」而非「AI 处理」。"},
+ {name:"命令面板",icon:"⌨️",cat:"效率入口",
+  desc:"快捷键或命令面板让熟练用户不离开键盘就能搜索功能、输入指令并启动 AI 任务。",
+  use:"高频、追求效率的重度用户；功能繁多、不宜全部平铺在界面上的产品。",
+  diff:"操作效率最高、承载能力最强，但天然不适合承担首次发现，必须配合一个看得见的入口。",
+  how:["全局绑定 ⌘K，并在界面上显式提示","支持模糊搜索 + 最近使用 + AI 指令","上下文感知：按当前位置给不同候选","再按一次或 Esc 关闭并归还焦点"],
+  trade:"注意与系统/浏览器快捷键冲突（⌘K 在浏览器是地址栏）；纯键盘入口对新手发现性低，需有可见提示兜底。",
+  refs:"Linear · Superhuman · Raycast · VS Code",
+  avoid:"用户不熟悉键盘工作流、命令数量很少，或快捷键与系统和浏览器冲突时不值得增加学习成本。",
+  states:["关闭","输入聚焦","搜索中","有结果","无结果","正在执行"],
+  metrics:["命令面板使用率","无结果率","键盘完成率"],
+  rel:"快捷任务 · 任务模板 · 搜索框 · 命令列表 · 快捷键提示",
+  trigger:"通过可见按钮或快捷键打开，默认聚焦搜索框；候选结合当前位置排序，但不能隐藏全局命令。执行时携带当前页面与用户选择的对象。",
+  platform:"桌面端适合键盘优先的居中面板；移动端改成全屏搜索或底部命令页，不要要求用户记住物理键盘快捷键。",
+  a11y:"使用对话框与组合框语义；支持上下箭头、Enter、Esc，关闭后焦点归位。界面持续展示快捷键提示，并提供可见打开入口。"},
+ {name:"空状态引导",icon:"🪧",cat:"新手入口",
+  desc:"空状态入口在用户第一次进入时说明 AI 能做什么，并用可点击示例帮助完成第一个真实任务。",
+  use:"首次进入、空会话，用户还不清楚 AI 能力边界、需要降低上手门槛时。",
+  diff:"不是日常任务入口，而是一次性的教学入口；完成首次任务或主动跳过后就应该退出主流程。",
+  how:["一句话说清能力与边界，别堆功能","给 3 条左右可点击的示例，降低「不知道问什么」","可一键跳过，不强迫","引导过后不再反复强弹"],
+  trade:"反复打扰会变成噪音；示例要贴合真实场景，否则点了发现不实用，反而降低信任。",
+  refs:"ChatGPT · Claude · Notion",
+  avoid:"用户已经熟悉产品、示例与角色无关，或教学内容完成后仍长期占据主界面时应避免。",
+  states:["首次进入","示例可选","准备数据","任务进行中","首次成功","已跳过"],
+  metrics:["首次任务发起率","首次任务成功率","新手流程退出率"],
+  rel:"新手与空状态 · 推荐问题 · 引导卡 · 示例按钮",
+  trigger:"只在首次进入、无历史或缺少必要数据时出现；示例点击后直接进入一个低风险、反馈快的真实任务，完成或跳过后记录状态。",
+  platform:"桌面和移动端都应保持首屏可读；移动端减少长说明，优先展示一条主任务和两三条示例，避免全屏强遮挡。",
+  a11y:"使用标准标题、按钮和对话框语义，焦点进入与退出路径完整。说明能力边界，示例使用真实业务语言，并提供永久跳过。"}
+];
+
+/* ============ 渲染 ============ */
+
+/* 决策矩阵真实数据（A 模块） */
+const MATRIX = [
+ ["🧭 导航栏按钮",5,1,3,5,5,"核心 AI 能力"],
+ ["🔵 悬浮球",5,2,2,4,2,"跨页面随时唤起"],
+ ["🛠️ 工具栏图标",3,4,4,3,3,"编辑器 Copilot"],
+ ["✍️ 划词唤起",3,5,5,3,2,"文字局部处理"],
+ ["🖱️ 右键菜单",2,5,5,2,1,"桌面端进阶操作"],
+ ["⌨️ 命令面板",2,3,5,1,2,"熟练用户提效"],
+ ["📍 就近触发",3,5,4,3,3,"对象级局部任务"],
+ ["🪧 空状态引导",5,2,3,5,5,"新手首次成功"]
+];
+const DIMS = ["可发现性","上下文精度","低干扰","新手友好","移动适配"];
+
+function dots(n){let s="";for(let i=0;i<5;i++)s+= i<n?"●":"○";return s;}
+
+/* 总览网格 */
+const ovGrid=document.getElementById("overviewGrid");
+DATA.overview.forEach((e,i)=>{
+  const b=document.createElement("button");
+  b.className="ov";
+  b.innerHTML=`<span class="emo">${e.emo}</span><span class="g">${e.g}</span><span class="n">${e.n}</span><span class="f">${e.f}</span>`;
+  b.onclick=()=>go(2+i);
+  ovGrid.appendChild(b);
+});
+
+/* 详情页动态插入 deck（在矩阵页前）——用 fragment 保序，避免 insertBefore 倒序 */
+const deck=document.getElementById("deck");
+const matrixSlide=deck.querySelector('section.slide:nth-child(3)'); /* 决策矩阵 = deck 第3个 section */
+const frag=document.createDocumentFragment();
+ENTRIES.forEach((e,i)=>{
+  const sec=document.createElement("section");
+  sec.className="slide";
+  sec.innerHTML=`
+    <div class="sec-head" style="padding-top:2px"><span class="sec-no">${e.icon}</span><span class="sec-title">${e.name} · ${e.cat}</span></div>
+    <p class="body-txt" style="margin-top:8px;font-size:14px;max-width:92ch">${e.desc}</p>
+    <div class="det">
+      <div class="dcol">
+        <h3>使用时机</h3>
+        <div class="field"><div class="fv">${e.use}</div></div>
+        <h3 style="margin-top:14px">与其他入口的差别</h3>
+        <div class="field"><div class="fv">${e.diff}</div></div>
+        <h3 style="margin-top:14px">怎么实现</h3>
+        <div class="field"><div class="fv"><ul>${e.how.map(h=>`<li>${h}</li>`).join("")}</ul></div></div>
+        <h3 style="margin-top:14px">关键取舍</h3>
+        <div class="field"><div class="fv">${e.trade}</div></div>
+        <h3 style="margin-top:14px">参考产品</h3>
+        <div class="field"><div class="fv">${e.refs}</div></div>
+      </div>
+      <div class="dcol">
+        <h3>避免使用</h3>
+        <div class="field"><div class="fv">${e.avoid}</div></div>
+        <h3 style="margin-top:14px">关键状态</h3>
+        <div class="field"><div class="fv">${e.states.join(" · ")}</div></div>
+        <h3 style="margin-top:14px">关注指标</h3>
+        <div class="field"><div class="fv">${e.metrics.join(" · ")}</div></div>
+        <h3 style="margin-top:14px">关联模式 / 组件</h3>
+        <div class="field"><div class="fv">${e.rel}</div></div>
+        <h3 style="margin-top:14px">触发与上下文</h3>
+        <div class="field"><div class="fv">${e.trigger}</div></div>
+        <h3 style="margin-top:14px">桌面 / 移动策略</h3>
+        <div class="field"><div class="fv">${e.platform}</div></div>
+        <h3 style="margin-top:14px">无障碍与文案</h3>
+        <div class="field"><div class="fv">${e.a11y}</div></div>
+      </div>
+    </div>`;
+  frag.appendChild(sec);
+});
+deck.insertBefore(frag, matrixSlide);
+
+/* 决策矩阵 */
+function renderMatrix(){
+  const cols=`<table class="mat"><tr><th>入口</th>${DIMS.map(d=>`<th>${d}</th>`).join("")}<th>更适合</th></tr>`+
+    MATRIX.map(r=>`<tr><td class="rn">${r[0]}</td>${r.slice(1,6).map(n=>`<td class="dots">${dots(n)}</td>`).join("")}<td class="dest">${r[6]}</td></tr>`).join("")+"</table>";
+  document.getElementById("matrixArea").innerHTML=cols;
+}
+
+/* 上线前检查 checklist */
+const CHECKS=[
+ "页面有一个明确的主入口，其他入口承担不同角色。",
+ "入口使用业务动作名称，不只依赖魔法图标。",
+ "用户知道 AI 会读取当前页面、选区还是整个项目。",
+ "入口打开后不会丢失选区、附件和任务上下文。",
+ "默认、聚焦、执行中、不可用和新结果状态均已定义。",
+ "悬停、右键和快捷键都有移动端或可见入口兜底。",
+ "所有入口都能通过键盘聚焦、触发和关闭。",
+ "首次引导可跳过，完成后不会反复强制出现。",
+ "已定义入口点击、任务发起、误触和关闭指标。",
+ "AI 不可用、权限不足和网络失败时仍有明确说明。"
+];
+function renderCheck(){
+  const area=document.getElementById("checkArea");
+  let html=`<div class="cols"><div class="col"><h3>逐项自检 · <span id="chkCount">0</span> / ${CHECKS.length}</h3>`;
+  CHECKS.forEach((c,i)=>{html+=`<label class="x" style="cursor:pointer;align-items:flex-start"><input type="checkbox" data-chk onchange="updChk()" style="margin-top:3px"><span>${c}</span></label>`;});
+  html+=`</div></div>`;
+  area.innerHTML=html;
+}
+function updChk(){
+  const boxes=document.querySelectorAll("input[data-chk]");
+  const done=[...boxes].filter(b=>b.checked).length;
+  const c=document.getElementById("chkCount"); if(c)c.textContent=done;
+}
+
+/* ============ 翻页引擎 ============ */
+const MODULES=[
+  {lbl:"A", title:"AI 入口设计", slides:[0,1,2,3,4,5,6,7,8,9,10,11,12]}, /* 13页：封/总览/8详情/矩阵/组合/检查 */
+  {lbl:"B", title:"输入设计", slides:[13]},
+  {lbl:"C", title:"过程设计", slides:[14]},
+  {lbl:"D", title:"输出设计", slides:[15]},
+  {lbl:"E", title:"角色设计", slides:[16]},
+  {lbl:"F", title:"异常设计", slides:[17]},
+  {lbl:"G", title:"信任设计", slides:[18]}
+];
+const TOTAL=19; /* 13 + 6 placeholder */
+let cur=0;
+const modOf=[]; /* slide index -> module idx */
+for(let i=0;i<MODULES.length;i++){for(const s of MODULES[i].slides){modOf[s]=i;}}
+const placeholderTxt=["B","C","D","E","F","G"];
+
+function buildModules(){
+  const track=document.getElementById("track");
+  track.innerHTML="";
+  MODULES.forEach((m,i)=>{
+    const b=document.createElement("button");
+    b.className="navslot"+(i===0?" active":"");
+    b.innerHTML=`<span class="bar"></span><span class="lbl">${m.lbl} ${i===0?"":""}</span>`;
+    b.onclick=()=>go(m.slides[0]);
+    track.appendChild(b);
+  });
+}
+function buildPager(){
+  const p=document.getElementById("pager");
+  p.innerHTML="";
+  for(let i=0;i<TOTAL;i++){
+    const b=document.createElement("button");
+    b.className=(i===cur?"on":"");
+    b.title="页 "+(i+1);
+    b.onclick=()=>go(i);
+    p.appendChild(b);
+  }
+}
+function go(n){
+  if(n<0||n>=TOTAL)return;
+  cur=n;
+  document.getElementById("deck").style.transform=`translateX(-${cur*100}vw)`;
+  document.getElementById("posCur").textContent=cur+1;
+  document.getElementById("posTot").textContent=TOTAL;
+  const mi=modOf[cur];
+  document.getElementById("crumb").textContent=MODULES[mi].title+(cur>=2&&cur<=9?` · ${ENTRIES[cur-2].name}`:"");
+  const pagerBtns=document.getElementById("pager").children;
+  for(let i=0;i<pagerBtns.length;i++)pagerBtns[i].className=(i===cur?"on":"");
+  const slots=document.getElementById("track").children;
+  for(let i=0;i<slots.length;i++)slots[i].className="navslot"+(i===mi?" active":"");
+}
+document.addEventListener("keydown",e=>{
+  if(e.key==="ArrowRight")go(cur+1);
+  else if(e.key==="ArrowLeft")go(cur-1);
+  else if(e.key==="Home")go(0);
+});
+
+/* placeholder 占位屏（B–G 后续补齐） */
+MODULES.forEach((m,i)=>{
+  if(i===0)return;
+  const sec=document.createElement("section");
+  sec.className="slide cover";
+  sec.innerHTML=`<div class="hero-no">${m.lbl}</div>
+    <div class="hero-txt">${m.title}<em>.</em></div>
+    <p class="body-txt" style="max-width:70ch;margin-top:22px">此模块将在完整版中补齐 —— 当前为 A 模块风格验收示范。</p>
+    <div class="btnrow"><button class="pbtn solid" onclick="go(1)">返回 A 模块 →</button></div>`;
+  deck.appendChild(sec);
+});
+
+/* 初始化 */
+renderMatrix();
+renderCheck();
+buildModules();
+buildPager();
+go(0);
+</script>
+</body>
+</html>

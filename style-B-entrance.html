@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>瑞士国际主义 · A 入口设计（示范）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  /* ===== 瑞士国际主义风 · Style B =====
+     网格至上 / 单一高饱和锚点色 / 直角 / 发丝线 / 极致字号对比 */
+  :root{
+    --ink:#111214;           /* 墨黑 */
+    --paper:#f5f4f1;         /* 纸张灰白 */
+    --anchor:#FF2A00;        /* 单一高饱和锚点色：信号红 */
+    --line:#c9c7c2;          /* 发丝线 */
+    --grey:#6b6b66;
+    --mono:"IBM Plex Mono",monospace;
+    --sans:"Archivo","Noto Sans SC",sans-serif;
+    --disp:"Space Grotesk","Noto Sans SC",sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+
+  /* 顶栏：直角，发丝线，mono 标注 */
+  .topbar{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:20px;
+    padding:12px 5vw;border-bottom:1px solid var(--ink)}
+  .idx{font-family:var(--mono);font-size:12px;font-weight:500;border:1.5px solid var(--ink);padding:4px 8px}
+  .grid-lines{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--grey);text-transform:uppercase}
+  .tag{font-family:var(--mono);font-size:11px;background:var(--anchor);color:#fff;padding:5px 10px}
+
+  /* Hero：超大号对比 */
+  .hero{padding:7vh 5vw 5vh;border-bottom:1px solid var(--ink)}
+  .hero .kick{font-family:var(--mono);font-size:12px;letter-spacing:.18em;color:var(--anchor);text-transform:uppercase;margin-bottom:16px}
+  .hero h1{font-family:var(--disp);font-weight:800;font-size:clamp(48px,9vw,120px);line-height:.92;letter-spacing:-.03em;text-transform:uppercase}
+  .hero .sub{margin-top:18px;font-size:17px;color:#333;max-width:60ch;line-height:1.6;font-weight:300}
+
+  /* 区块头：编号 + 发丝线 */
+  .sec-head{display:grid;grid-template-columns:60px 1fr;gap:20px;align-items:baseline;padding:34px 5vw 6px}
+  .sec-no{font-family:var(--mono);font-size:13px;color:var(--anchor);font-weight:500}
+  .sec-title{font-family:var(--disp);font-weight:700;font-size:clamp(22px,3vw,34px);letter-spacing:-.01em;text-transform:uppercase}
+
+  /* 网格区 */
+  .grid-wrap{padding:24px 5vw 30px}
+  .grid-8{display:grid;grid-template-columns:repeat(4,1fr);gap:1px;background:var(--line);border:1px solid var(--line)}
+  .cell{background:var(--paper);padding:18px 16px;min-height:130px;display:flex;flex-direction:column;gap:8px}
+  .cell:hover{background:#fff}
+  .cell .cat{font-family:var(--mono);font-size:9.5px;letter-spacing:.12em;color:var(--grey);text-transform:uppercase}
+  .cell .emo{font-size:24px}
+  .cell .cn{font-family:var(--disp);font-weight:600;font-size:15px}
+  .cell .fd{font-size:12px;color:#555;font-weight:300;flex:1}
+  .cell .rp{font-family:var(--mono);font-size:10px;color:var(--grey)}
+
+  /* 决策矩阵 */
+  .mat-wrap{padding:10px 5vw 30px;overflow-x:auto}
+  .mat{width:100%;border-collapse:collapse;font-size:13px}
+  .mat th{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--grey);
+    text-align:left;padding:10px 8px;border-bottom:2px solid var(--ink)}
+  .mat td{padding:10px 8px;border-bottom:1px solid var(--line)}
+  .mat td.dot{font-family:var(--mono)}
+  .mat .rn{font-family:var(--disp);font-weight:600}
+  .mat .dest{font-family:var(--mono);font-size:11px;color:var(--anchor);font-weight:500}
+  .mat tr:hover td{background:#fff}
+
+  /* 三列组合 / 反例 */
+  .cols{display:grid;grid-template-columns:1.2fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);margin:0 5vw 40px}
+  .col{background:var(--paper);padding:22px 20px}
+  .col h3{font-family:var(--mono);font-size:12px;letter-spacing:.1em;border-bottom:2px solid var(--ink);padding-bottom:10px;margin-bottom:16px;text-transform:uppercase}
+  .combo{margin-bottom:14px}
+  .combo .t{font-weight:700;font-size:13.5px;font-family:var(--disp)}
+  .combo .f{font-family:var(--mono);font-size:11px;color:var(--anchor);margin-top:3px}
+  .x{display:flex;gap:9px;font-size:13px;margin-bottom:11px;align-items:baseline}
+  .x .n{font-family:var(--mono);color:var(--anchor);font-weight:700}
+
+  .foot{border-top:1px solid var(--ink);padding:16px 5vw 28px;display:flex;justify-content:space-between;
+    font-family:var(--mono);font-size:10.5px;color:var(--grey);text-transform:uppercase;letter-spacing:.1em}
+
+  @media(max-width:860px){.grid-8{grid-template-columns:repeat(2,1fr)}.cols{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="idx">FIG.01</span>
+  <span class="grid-lines">AI Interaction Pattern Library</span>
+  <span class="tag">Module A</span>
+</div>
+
+<section class="hero">
+  <div class="kick">AI 入口设计 · Where to Awaken AI</div>
+  <h1>入口设计</h1>
+  <p class="sub">决定用户在什么时刻、从哪里唤起 AI，以及带入哪些任务上下文。好的入口既要容易找到，也要贴近当前任务，并让用户清楚点击后会发生什么。</p>
+</section>
+
+<div class="sec-head">
+  <span class="sec-no">01</span>
+  <span class="sec-title">八种入口 · Eight Entries</span>
+</div>
+<div class="grid-wrap">
+  <div class="grid-8">
+    <div class="cell"><span class="emo">🧭</span><span class="cat">常驻</span><span class="cn">导航栏按钮</span><span class="fd">最稳定的一级功能入口</span><span class="rp">Gemini · Slack</span></div>
+    <div class="cell"><span class="emo">🔵</span><span class="cat">常驻</span><span class="cn">悬浮球</span><span class="fd">跨页面随时唤起</span><span class="rp">Copilot · Intercom</span></div>
+    <div class="cell"><span class="emo">🛠️</span><span class="cat">常驻</span><span class="cn">工具栏图标</span><span class="fd">编辑场景即时处理</span><span class="rp">WPS · Figma</span></div>
+    <div class="cell"><span class="emo">✍️</span><span class="cat">上下文</span><span class="cn">划词唤起</span><span class="fd">选区即任务上下文</span><span class="rp">Notion · Craft</span></div>
+    <div class="cell"><span class="emo">🖱️</span><span class="cat">上下文</span><span class="cn">右键菜单</span><span class="fd">低频进阶对象操作</span><span class="rp">VS Code · Cursor</span></div>
+    <div class="cell"><span class="emo">📍</span><span class="cat">上下文</span><span class="cn">就近触发</span><span class="fd">对象级局部任务</span><span class="rp">Notion · Coda</span></div>
+    <div class="cell"><span class="emo">⌨️</span><span class="cat">效率</span><span class="cn">命令面板</span><span class="fd">⌘K 键盘提效</span><span class="rp">Linear · Raycast</span></div>
+    <div class="cell"><span class="emo">🪧</span><span class="cat">新手</span><span class="cn">空状态引导</span><span class="fd">首次任务冷启动</span><span class="rp">ChatGPT · Claude</span></div>
+  </div>
+</div>
+
+<div class="sec-head">
+  <span class="sec-no">02</span>
+  <span class="sec-title">决策矩阵 · Decision Matrix</span>
+</div>
+<div class="mat-wrap">
+  <table class="mat">
+    <tr><th>入口</th><th>发现</th><th>精度</th><th>低干扰</th><th>新手</th><th>移动</th><th>更适合</th></tr>
+    <tr><td class="rn">🧭 导航</td><td>●●●●●</td><td>●○○○○</td><td>●●●○○</td><td>●●●●●</td><td>●●●●●</td><td class="dest">核心 AI 能力</td></tr>
+    <tr><td class="rn">🔵 悬浮球</td><td>●●●●●</td><td>●●○○○</td><td>●●○○○</td><td>●●●●○</td><td>●●○○○</td><td class="dest">跨页面随时唤起</td></tr>
+    <tr><td class="rn">🛠️ 工具栏</td><td>●●●○○</td><td>●●●●○</td><td>●●●●○</td><td>●●●○○</td><td>●●●○○</td><td class="dest">编辑器 Copilot</td></tr>
+    <tr><td class="rn">✍️ 划词</td><td>●●●○○</td><td>●●●●●</td><td>●●●●●</td><td>●●●○○</td><td>●●○○○</td><td class="dest">文字局部处理</td></tr>
+    <tr><td class="rn">🖱️ 右键</td><td>●●○○○</td><td>●●●●●</td><td>●●●●●</td><td>●●○○○</td><td>●○○○○</td><td class="dest">桌面进阶操作</td></tr>
+    <tr><td class="rn">⌨️ 命令</td><td>●●○○○</td><td>●●●○○</td><td>●●●●●</td><td>●○○○○</td><td>●●○○○</td><td class="dest">熟练用户提效</td></tr>
+    <tr><td class="rn">📍 就近</td><td>●●●○○</td><td>●●●●●</td><td>●●●●○</td><td>●●●○○</td><td>●●●○○</td><td class="dest">对象局部任务</td></tr>
+    <tr><td class="rn">🪧 空状态</td><td>●●●●●</td><td>●●○○○</td><td>●●●○○</td><td>●●●●●</td><td>●●●●●</td><td class="dest">新手首次成功</td></tr>
+  </table>
+</div>
+
+<div class="sec-head">
+  <span class="sec-no">03</span>
+  <span class="sec-title">组合 · 反例 · Combo & Pitfalls</span>
+</div>
+<div class="cols">
+  <div class="col">
+    <h3>组合方案 · 主 + 快捷 + 兜底</h3>
+    <div class="combo"><div class="t">AI Chat</div><div class="f">导航 → 空状态 → 命令面板</div></div>
+    <div class="combo"><div class="t">Copilot</div><div class="f">导航兜底 → 工具栏 → 划词 / 就近</div></div>
+    <div class="combo"><div class="t">Agent</div><div class="f">主入口 → 任务快捷 → 悬浮状态</div></div>
+  </div>
+  <div class="col">
+    <h3>反例 · 越醒目越要负责</h3>
+    <div class="x"><span class="n">×</span>同一页多个功能重复的 AI 入口</div>
+    <div class="x"><span class="n">×</span>只放魔法图标，无文字与业务动作名</div>
+    <div class="x"><span class="n">×</span>打开 AI 丢失选区与页面上下文</div>
+    <div class="x"><span class="n">×</span>依赖悬停/右键，无移动端与键盘替代</div>
+    <div class="x"><span class="n">×</span>首引导、红点动画反复无法关闭</div>
+  </div>
+</div>
+
+<div class="foot">
+  <span>Style B · Swiss International</span>
+  <span>Demo · guizang design language</span>
+</div>
+
+</body>
+</html>

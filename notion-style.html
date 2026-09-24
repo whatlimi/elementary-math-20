@@ -1,0 +1,774 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 交互设计知识库</title>
+<style>
+  :root{
+    --bg:#ffffff; --sidebar:#f7f7f5; --text:#37352f; --muted:#787774;
+    --border:#e9e9e7; --accent:#37352f; --accent-bg:#f1f1ef;
+    --hover:#f1f1ef; --blue:#0b6bcf; --code-bg:#f7f6f3;
+    --serif:ui-serif,Georgia,"Songti SC",serif;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.6;font-size:16px}
+
+  /* ===== 顶栏 ===== */
+  .topbar{position:sticky;top:0;z-index:50;height:45px;background:var(--bg);border-bottom:1px solid var(--border);
+    display:flex;align-items:center;gap:8px;padding:0 14px}
+  .topbar .menu{font-size:16px;color:var(--muted);background:none;border:none;cursor:pointer;width:30px;height:30px;border-radius:6px}
+  .topbar .menu:hover{background:var(--hover)}
+  .searchbox{flex:1;max-width:360px;display:flex;align-items:center;gap:6px;background:var(--hover);
+    border-radius:6px;padding:4px 10px;font-size:14px}
+  .searchbox input{border:none;background:transparent;outline:none;flex:1;font-size:14px;color:var(--text)}
+  .crumb{font-size:13px;color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-left:auto}
+
+  /* ===== 侧栏 ===== */
+  .sidebar{position:fixed;top:45px;bottom:0;left:0;width:260px;background:var(--sidebar);border-right:1px solid var(--border);
+    overflow-y:auto;padding:14px 10px;transition:transform .2s ease;z-index:40}
+  .sidebar.closed{transform:translateX(-100%)}
+  .side-title{font-size:13px;font-weight:600;padding:4px 8px 10px;display:flex;align-items:center;gap:6px}
+  .side-title .dot{width:18px;height:18px;background:#000;color:#fff;border-radius:4px;display:grid;place-items:center;font-size:11px;font-weight:600}
+  .side-group{padding:4px 8px}
+  .side-group>div{font-size:12px;color:var(--muted);font-weight:500;margin-bottom:3px}
+  .side-item{display:block;font-size:13.5px;color:var(--text);text-decoration:none;padding:3px 8px;border-radius:4px;margin:1px 0}
+  .side-item:hover{background:var(--hover)}
+  .side-item.dim{color:var(--muted)}
+  .side-item.on{background:var(--accent-bg);font-weight:500}
+
+  /* ===== 主内容 ===== */
+  .content{transition:margin-left .2s ease}
+  .content.shifted{margin-left:260px}
+  .doc{max-width:760px;margin:0 auto;padding:48px 40px 120px}
+  .doc-head{font-size:13px;color:var(--muted);display:flex;gap:6px;align-items:center;margin-bottom:20px}
+  .doc-head b{color:var(--text)}
+  h1.title{font-size:40px;font-weight:800;line-height:1.2;letter-spacing:-.01em;margin-bottom:14px}
+  .lead{color:var(--text);font-size:17px;line-height:1.7}
+  .doc-sep{border:none;border-top:1px solid var(--border);margin:36px 0}
+  .searchinfo{background:#fbfbfa;border:1px solid var(--border);border-radius:8px;padding:14px 18px;font-size:14px;color:var(--muted)}
+  .searchinfo b{color:var(--text)}
+  .searchinfo .clear{color:var(--blue);cursor:pointer;margin-left:8px}
+
+  /* Notion 风格正文块 */
+  h2.sec{font-size:26px;font-weight:700;margin:42px 0 12px;padding-top:10px;letter-spacing:-.01em}
+  h3.pat{font-size:19px;font-weight:600;margin:30px 0 6px}
+  p.body{color:var(--text);margin:8px 0}
+  .field-label{font-size:13px;font-weight:500;color:var(--muted);margin:14px 0 4px;display:flex;align-items:center;gap:6px}
+  .field-label::before{content:"";width:10px;height:10px;background:#fff;border:1px solid var(--muted);border-radius:2px}
+  .field-val{font-size:15px;padding-left:2px}
+  .field-val ul{padding-left:20px}
+  .field-val li{margin:3px 0}
+  .pill{display:inline-block;background:var(--hover);border-radius:3px;padding:1px 6px;font-size:12.5px;color:var(--muted);margin-right:6px}
+  .ref-line{font-size:14px;color:var(--muted);font-style:normal}
+  .quote{border-left:3px solid var(--text);background:var(--accent-bg);padding:10px 16px;margin:12px 0;border-radius:0 4px 4px 0;font-size:15px}
+
+  /* 卡片（总览用）*/
+  .pat-card{border:1px solid var(--border);border-radius:8px;padding:14px 16px;margin:12px 0;cursor:pointer;transition:background .12s}
+  .pat-card:hover{background:#f9f9f8}
+  .pat-card .pn{font-size:16px;font-weight:600}
+  .pat-card .pd{font-size:14px;color:var(--muted);margin-top:2px}
+
+  /* 目录大纲（文档顶部）*/
+  .outline{background:#fbfbfa;border:1px solid var(--border);border-radius:8px;padding:16px 20px;margin:28px 0}
+  .outline .ot{font-size:12px;color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+  .outline a{display:block;color:var(--text);text-decoration:none;font-size:14.5px;padding:3px 0}
+  .outline a:hover{color:var(--blue)}
+  .outline a.sub{padding-left:20px;font-size:13.5px;color:var(--muted)}
+
+  /* 表格 */
+  table{width:100%;border-collapse:collapse;font-size:14px;margin:14px 0}
+  th{font-size:12.5px;color:var(--muted);font-weight:500;text-align:left;border-bottom:1px solid var(--text);padding:6px 8px}
+  td{border-bottom:1px solid var(--border);padding:7px 8px;vertical-align:top}
+  td.dots{font-family:var(--mono);font-size:12px;white-space:nowrap;color:var(--muted)}
+
+  /* 检查清单 */
+  .check{border-top:1px solid var(--border);padding:8px 0;display:flex;gap:10px;font-size:15px;align-items:flex-start}
+  .check input{margin-top:4px;accent-color:#111}
+
+  .toplink{display:inline-block;margin-top:20px;color:var(--blue);font-size:14px;text-decoration:none}
+
+  /* ===== 交互 demo 区 ===== */
+  .demo-area{border:1px solid var(--border);border-radius:10px;margin:20px 0 8px;overflow:hidden}
+  .demo-head{background:#fbfbfa;padding:8px 14px;font-size:13px;color:var(--muted);border-bottom:1px solid var(--border)}
+  .demo-stage{position:relative;background:linear-gradient(180deg,#f7f6f3,#efece8);padding:22px;min-height:200px;overflow:hidden}
+  .demo-note{background:#fbfbfa;padding:7px 14px;font-size:12px;color:var(--muted);border-top:1px solid var(--border)}
+  .demo-paper{background:#fff;border:1px solid var(--border);border-radius:6px;padding:18px;max-width:420px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  .demo-paper b{font-size:15px;display:block;margin-bottom:8px}
+  .demo-paper p{font-size:13.5px;color:#444;margin:6px 0}
+  /* 悬浮球 */
+  .floatball{position:absolute;right:18px;bottom:16px;width:44px;height:44px;border-radius:50%;
+    background:#111;color:#fff;display:grid;place-items:center;font-size:20px;cursor:grab;
+    box-shadow:0 4px 14px rgba(0,0,0,.25);user-select:none;z-index:5}
+  .floatball.dragging{cursor:grabbing;opacity:.85}
+  .floatpanel{position:absolute;right:18px;bottom:70px;width:230px;background:#fff;border:1px solid var(--border);
+    border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.15);padding:14px;display:none;z-index:6}
+  .floatpanel.show{display:block}
+  .floatpanel b{font-size:14px;display:block;margin-bottom:6px}
+  .fp-s{font-size:12px;color:#666;margin-bottom:10px;line-height:1.5}
+  .fp-btn{display:block;width:100%;text-align:left;background:#f7f7f5;border:1px solid var(--border);
+    border-radius:6px;padding:7px 10px;margin:5px 0;font-size:13px;color:var(--text);cursor:pointer}
+  .fp-btn:hover{background:#fff;border-color:#bbb}
+  .fp-result{margin-top:10px;font-size:12.5px;color:#0b6bcf;background:#eef4fb;border-radius:6px;padding:8px 10px;display:none}
+  /* 划词浮条 */
+  .sel-para{font-size:15px;color:#333;line-height:2;background:#fff;padding:14px;border:1px solid var(--border);border-radius:6px;cursor:text}
+  .sel-para::selection{background:#cfe3ff}
+  .sel-bar{position:relative;display:inline-flex;gap:6px;background:#fff;border:1px solid var(--border);border-radius:8px;
+    padding:5px;box-shadow:0 4px 14px rgba(0,0,0,.14);margin:4px 0;z-index:7}
+  .sel-bar .fp-btn{width:auto;display:inline-block;margin:0}
+  .sel-result{margin-top:10px;font-size:13px;color:#333;background:#fff;border:1px solid var(--border);border-radius:6px;padding:10px 14px;display:none;line-height:1.6}
+
+  /* 导航栏 demo */
+  .nav-demo{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--border);border-radius:6px;padding:9px 14px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.05);flex-wrap:wrap}
+  .nd-brand{font-weight:700;font-size:14px;margin-right:6px}
+  .nd-item{font-size:13px;color:#555;cursor:pointer;padding:3px 6px;border-radius:4px}
+  .nd-item:hover{background:#f1f1ef}
+  .nd-ai{background:#111;color:#fff;border-radius:6px;padding:5px 10px;font-weight:500;cursor:pointer}
+  .nd-ai:hover{background:#333}
+  .nd-user{margin-left:auto;font-size:16px}
+  .nd-page{background:#fff;border:1px solid var(--border);border-radius:6px;padding:16px;max-width:420px}
+  .nd-page b{font-size:15px;display:block;margin-bottom:6px}
+  .nd-page p{font-size:13.5px;color:#444}
+  .nd-panel{position:relative;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:14px;max-width:240px;margin-top:12px;display:none}
+  .nd-panel.show{display:block}
+  .nd-panel b{font-size:14px;display:block;margin-bottom:6px}
+
+  /* 工具栏 demo */
+  .tb-bar{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:6px;padding:7px 12px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  .tb-bar b{font-size:13px;margin-right:auto}
+  .tb-ic{font-size:13px;color:#444;padding:2px 8px;border-radius:4px;cursor:pointer}
+  .tb-ic:hover{background:#f1f1ef}
+  .tb-ai{background:#111;color:#fff;border-radius:6px;font-weight:500}
+  .tb-ai:hover{background:#333}
+  .tb-text{background:#fff;border:1px solid var(--border);border-radius:6px;padding:14px;font-size:14px;color:#333;line-height:1.8;max-width:460px}
+  .tb-text b{background:#ffe9a8;padding:0 2px;border-radius:2px}
+  .tb-menu{display:none;gap:6px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px;box-shadow:0 4px 14px rgba(0,0,0,.14);max-width:240px;margin-top:8px}
+  .tb-menu.show{display:block}
+  .tb-menu .fp-btn{width:100%}
+
+  /* 右键 demo */
+  .ctx-list{background:#fff;border:1px solid var(--border);border-radius:6px;padding:6px;max-width:300px}
+  .ctx-file{font-size:14px;padding:7px 10px;border-radius:4px;cursor:default;color:#333}
+  .ctx-file:hover{background:#f1f1ef}
+  .ctx-file.on{background:#e7e7e3}
+  .ctx-menu{position:absolute;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 8px 26px rgba(0,0,0,.18);min-width:190px;padding:5px;z-index:8;display:none}
+  .ctx-menu.show{display:block}
+  .cm-item{font-size:13px;padding:6px 10px;border-radius:4px;cursor:pointer}
+  .cm-item:hover{background:#f1f1ef}
+  .cm-item.ai{color:#0b6bcf}
+  .cm-item.ai:hover{background:#eef4fb}
+  .cm-sep{height:1px;background:#eee;margin:4px 6px}
+
+  /* 就近触发 demo */
+  .near-card{position:relative;background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;max-width:420px;cursor:pointer}
+  .nc-head{font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .nc-near{display:none;width:22px;height:22px;border-radius:6px;background:#111;color:#fff;place-items:center;font-size:12px;cursor:pointer}
+  .nc-txt{font-size:13.5px;color:#444}
+  .near-card:hover .nc-near{display:grid}
+  .near-menu{display:none;background:#fff;border:1px solid var(--border);border-radius:8px;padding:5px;box-shadow:0 4px 14px rgba(0,0,0,.14);max-width:230px;margin-top:8px}
+  .near-menu.show{display:block}
+
+  /* 命令面板 demo */
+  .cmd-open{background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 18px;font-size:14px;color:#333;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  .cmd-open:hover{border-color:#aaa}
+  .cmd-open kbd{background:#f1f1ef;border-radius:4px;padding:2px 6px;font-size:12px;font-family:var(--mono);margin-left:6px}
+  .cmd-mask{position:absolute;inset:0;background:rgba(0,0,0,.25);display:none;z-index:8}
+  .cmd-mask.show{display:block}
+  .cmd-panel{position:relative;width:min(420px,90%);background:#fff;border-radius:10px;box-shadow:0 18px 50px rgba(0,0,0,.3);overflow:hidden;z-index:9;display:none;margin:0 auto}
+  .cmd-panel.show{display:block}
+  .cmd-input{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);padding:12px 16px;font-size:14px}
+  .cmd-input span{font-family:var(--mono);font-size:14px}
+  .cmd-input input{border:none;outline:none;flex:1;font-size:14px;background:transparent;color:var(--text)}
+  .cmd-list{padding:6px;max-height:220px;overflow-y:auto}
+  .cmd-item2{font-size:13.5px;padding:8px 12px;border-radius:6px;cursor:pointer;display:flex;gap:8px;align-items:center}
+  .cmd-item2:hover,.cmd-item2.sel{background:#f1f1ef}
+  .cmd-item2 .k{margin-left:auto;font-family:var(--mono);font-size:11px;color:#999}
+  .cmd-foot{border-top:1px solid var(--border);padding:7px 16px;font-size:11px;color:#999}
+
+  /* 空状态 demo */
+  .empty-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:26px 24px;width:min(360px,92%);text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.08)}
+  .ec-eyebrow{font-size:12px;color:var(--muted);margin-bottom:8px}
+  .ec-title{font-size:18px;font-weight:700;margin-bottom:6px}
+  .ec-sub{font-size:13.5px;color:var(--muted);margin-bottom:16px}
+  .ec-btn{display:block;width:100%;background:#f7f7f5;border:1px solid var(--border);border-radius:8px;padding:9px 12px;margin:6px 0;font-size:13.5px;color:var(--text);cursor:pointer;text-align:left}
+  .ec-btn:hover{background:#fff;border-color:#bbb}
+  .ec-skip{margin-top:12px;font-size:12.5px;color:var(--blue);cursor:pointer;display:inline-block}
+  .ec-done{font-size:12px;color:#0b6bcf;margin-top:8px;display:none}
+
+  @media(max-width:820px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:none}.content.shifted{margin-left:0}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="menu" id="menuBtn" onclick="toggleSidebar()">☰</button>
+  <div class="searchbox">🔍 <input id="searchInput" placeholder="搜索模式…" oninput="doSearch(this.value)"></div>
+  <span class="crumb">AI 交互设计知识库 / <span id="crumbTail">入口设计</span></span>
+</div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="side-title"><span class="dot">AI</span> 交互设计知识库</div>
+  <div id="sideTree"></div>
+</aside>
+
+<main class="content shifted" id="content">
+  <div class="doc" id="doc"></div>
+</main>
+
+<script>
+/* ============ 内容数据（A 模块） ============ */
+const MODULE = {
+  title:"A · AI 入口设计",
+  lead:"入口设计决定用户在什么时刻、从哪里唤起 AI，以及系统会带入哪些任务上下文。好的入口不只要容易找到，更要贴近当前任务，并让用户清楚知道点击后会发生什么。",
+  groups:[
+    {label:"常驻入口",items:["导航栏按钮","悬浮球","工具栏图标"]},
+    {label:"上下文入口",items:["划词唤起","右键菜单","就近触发"]},
+    {label:"效率入口",items:["命令面板"]},
+    {label:"新手入口",items:["空状态引导"]}
+  ],
+  patterns:[
+    {id:"nav", emoji:"🧭", name:"导航栏按钮", cat:"常驻入口",
+     desc:"把 AI 放在产品最稳定的位置，作为用户反复进入的一级功能入口。",
+     use:"AI 是产品核心卖点、需要高曝光，或要在用户心智里确立「这是个 AI 产品」时。",
+     diff:"可发现性最高、位置最稳定，但与正在处理的具体内容距离较远，占用稀缺的一级导航空间。",
+     how:["文字标签 + 图标，别只放图标（可发现性）","有选中/激活态，与面板开合联动","位置稳定、跨页面一致"],
+     trade:"导航位稀缺，放上去就要为它的点击率负责；AI 不够高频成熟时，占一级入口反而喧宾夺主。",
+     refs:["Gmail Gemini","Slack","Linear"],
+     avoid:"AI 仍是低频试验能力，或无法跨页面保持稳定体验时，不要过早占据一级导航资源。",
+     states:["默认","悬停/聚焦","当前页","面板展开","新结果","不可用"],
+     metrics:["导航点击率","任务发起率","重复访问率"],
+     rel:"主任务入口 · 导航项 · 状态徽标 · 侧边面板",
+     trigger:"始终位于稳定导航位置；进入后保留当前页面作为可选上下文。激活状态与页面/侧栏/面板开合同步。",
+     platform:"桌面用顶栏或侧栏；移动端进主导航或底部一级入口，避免藏在多层汉堡菜单。",
+     a11y:"用真实导航链接/按钮并标识当前状态；图标旁保留文字。名称表达价值，如「生成周报」而非「智能」。"},
+    {id:"float", emoji:"🔵", name:"悬浮球", cat:"常驻入口",
+     desc:"始终停留在界面边缘的全局入口，滚动或进入深层内容后仍可随时唤起。",
+     use:"需要全局常驻、随时可唤起，又不想长期占用固定版面；尤其适合内容长、需持续滚动的编辑类产品。",
+     diff:"比导航按钮更靠近当前内容，不随页面滚动消失；代价是持续占用视觉注意力，可能遮挡内容。",
+     how:["可拖拽 + 自动吸边，不遮挡正文","红点/数字做未读或建议提醒","点击展开面板、再点收起，状态清晰","沉浸编辑时也保持可达"],
+     trade:"移动端易误触，需收起态与安全边距；长期悬浮会和正文争夺注意力，默认低调、激活才强调。",
+     refs:["微软 365 Copilot","Intercom","Crisp"],
+     avoid:"有固定底部操作、局部任务多于全局任务，或悬浮按钮遮挡正文和关键控件时不应使用。",
+     states:["默认","悬停/聚焦","新提醒","拖动中","面板展开","不可用"],
+     metrics:["入口点击率","唤起后任务发起率","误触关闭率"],
+     rel:"AI 唤起 · 继续任务 · 浮动按钮 · 徽标 · 侧边面板",
+     trigger:"常驻显示；点击或键盘确认后展开。新结果徽标只表达状态，不擅自打开。默认携带当前页面/项目上下文并说明范围。",
+     platform:"桌面可拖动吸边；移动端保持稳定位置，避开底部导航、键盘与安全区域，不把拖动作为必要操作。",
+     a11y:"用有名称的按钮，支持 Enter/Space 与清晰焦点；提醒不只靠红点颜色；持续动画应允许减少。文案写「AI 助手」或具体任务。"},
+    {id:"toolbar", emoji:"🛠️", name:"工具栏图标", cat:"常驻入口",
+     desc:"把 AI 作为编辑能力的一部分，无需离开当前工作区即可改写、总结或生成。",
+     use:"文档、表格、设计稿等编辑场景内，对当前正在写的内容做即时处理。",
+     diff:"比导航入口更贴近当前任务，比划词覆盖更广；上下文通常只精确到当前文档或编辑器。",
+     how:["紧贴编辑区，图标语义清晰（✦/魔法棒等约定）","与其他工具风格统一、不突兀","通常配合「选中内容」使用"],
+     trade:"工具条空间有限，图标多则拥挤；AI 项要有足够辨识度，否则淹没在一排格式按钮里。",
+     refs:["WPS AI","Figma","Canva"],
+     avoid:"非编辑/操作场景、AI 不依赖当前内容，或工具栏已高度拥挤时应避免。",
+     states:["默认","悬停/聚焦","已有选区","禁用","菜单展开","执行中"],
+     metrics:["工具栏使用率","任务完成率","执行后撤销率"],
+     rel:"快捷任务 · 图标按钮 · 工具提示 · 动作菜单",
+     trigger:"编辑器获焦或存在可处理内容时可用；依赖选区时，未选中应禁用并解释原因。打开后携带当前文档或编辑对象。",
+     platform:"桌面进固定工具栏；移动端收进选中文本后操作条或「更多」菜单，保留足够触控面积。",
+     a11y:"图标按钮必须有可访问名称与工具提示；禁用不只降透明度。文案直接写结果，如「改写」「生成摘要」。"},
+    {id:"sel", emoji:"✍️", name:"划词唤起", cat:"上下文入口",
+     desc:"选中一段内容后出现 AI 操作条，系统可直接把选区作为任务上下文。",
+     use:"针对「选中的具体内容」做即时操作，且操作类型相对固定、可枚举。",
+     diff:"上下文精度高于工具栏和导航，默认不占空间；缺点是要先完成「选中内容」这个动作。",
+     how:["浮条紧贴选区上方，不遮住选中内容","只放最高频动作，避免长菜单","跟随选区变化、选区消失即收起","AI 项与普通格式操作做视觉区分"],
+     trade:"选区丢失要立刻收起，否则浮条悬空；动作堆多会让浮条变长，失去「轻」的优势。",
+     refs:["Notion","Craft","沉浸式翻译"],
+     avoid:"对象非文字、移动端占比高，或选中内容涉及敏感信息且读取范围无法说明时应避免。",
+     states:["无选区","有效选区","浮条出现","执行中","结果返回","选区丢失"],
+     metrics:["选区触发率","任务完成率","浮条关闭率"],
+     rel:"上下文推荐 · 选区浮条 · 快捷任务 · 命令菜单",
+     trigger:"仅在有效选区时出现，明确只读取所选内容；选区变化或失焦及时收起，执行期间保存原选区引用。",
+     platform:"桌面靠近选区上方显示；移动端依赖系统选区菜单或底部操作条，避免浮层被虚拟键盘遮挡。",
+     a11y:"不只依赖鼠标划选；支持键盘选文后触发。浮条不抢焦点，关闭后焦点回原文。动作写「改写选中内容」等明确文案。"},
+    {id:"ctx", emoji:"🖱️", name:"右键菜单", cat:"上下文入口",
+     desc:"把 AI 动作放进对象原有的操作路径，适合低频、进阶且依赖具体对象的任务。",
+     use:"进阶用户；需按选中对象类型提供不同的上下文动作时。",
+     diff:"几乎不占界面空间，比常驻入口克制；但发现性最低，不能直接照搬到移动端。",
+     how:["AI 项单独分组、带图标，与系统项区隔","遵循系统右键排序与习惯","菜单项随选中对象动态变化"],
+     trade:"发现性很低——多数用户不主动右键，必须配合显性入口；移动端无右键，需另设触发。",
+     refs:["VS Code","Cursor","Figma"],
+     avoid:"用户以新手或移动端为主，且无其他显性入口兜底时，不能只依赖右键菜单。",
+     states:["无目标","菜单展开","项目聚焦","当前不可用","执行中","已完成"],
+     metrics:["右键触达率","AI 菜单使用率","无操作关闭率"],
+     rel:"对象操作 · 上下文菜单 · 菜单项 · 分组线",
+     trigger:"用户在明确对象上打开上下文菜单时出现；菜单项随对象类型变化，执行前保留对象引用与选中状态。",
+     platform:"适合桌面鼠标与触控板；移动端提供长按菜单、更多按钮或显性入口，不直接照搬右键。",
+     a11y:"支持 Shift+F10 或菜单键；上下箭头移动、Enter 执行、Esc 返回原对象。AI 动作独立分组并写清作用对象。"},
+    {id:"near", emoji:"📍", name:"就近触发", cat:"上下文入口",
+     desc:"就近入口贴在段落、单元格或卡片旁，让用户直接对当前对象执行 AI 操作。",
+     use:"段落级 / 单元格级 / 卡片级的局部、精细操作。",
+     diff:"比工具栏更精确，比划词少一步选择；但对象过多时易产生大量图标与视觉噪音。",
+     how:["默认隐藏，hover 到对象才出现","紧贴操作对象、指向明确","克制使用，别给每个元素都挂图标"],
+     trade:"图标过多显「吵」；hover 出现对触屏不友好，移动端需另设触发（如长按）。",
+     refs:["Notion","Coda","飞书多维表格"],
+     avoid:"对象密度很高、每个对象都出图标，或完全依赖触屏且无长按替代时应避免。",
+     states:["隐藏","悬停/聚焦","建议出现","菜单展开","执行中","已忽略"],
+     metrics:["入口曝光率","建议采纳率","重复忽略率"],
+     rel:"上下文推荐 · 行内按钮 · 工具提示 · 弹出菜单",
+     trigger:"悬停、聚焦或选中单个内容对象时出现；入口携带当前对象标识，不默认扩大读取范围。",
+     platform:"桌面对象边缘渐显；移动端改为对象更多按钮、滑动动作或长按菜单，不依赖 hover。",
+     a11y:"对象获键盘焦点时同样显示入口；图标有名称与工具提示，不造成布局跳动。文案写「总结这一段」而非「AI 处理」。"},
+    {id:"cmd", emoji:"⌨️", name:"命令面板", cat:"效率入口",
+     desc:"快捷键或命令面板让熟练用户不离开键盘就能搜索功能、输入指令并启动 AI 任务。",
+     use:"高频、追求效率的重度用户；功能繁多、不宜全部平铺在界面上的产品。",
+     diff:"操作效率最高、承载能力最强，但天然不适合承担首次发现，必须配合看得见的入口。",
+     how:["全局绑定 ⌘K，并显式提示快捷键","支持模糊搜索 + 最近使用 + AI 指令","上下文感知：按当前位置给不同候选","再按一次或 Esc 关闭并归还焦点"],
+     trade:"注意与系统/浏览器快捷键冲突（⌘K 在浏览器是地址栏）；纯键盘入口对新手发现性低。",
+     refs:["Linear","Superhuman","Raycast","VS Code"],
+     avoid:"用户不熟悉键盘工作流、命令数很少，或快捷键与系统/浏览器冲突时不必增加学习成本。",
+     states:["关闭","输入聚焦","搜索中","有结果","无结果","正在执行"],
+     metrics:["命令面板使用率","无结果率","键盘完成率"],
+     rel:"快捷任务 · 任务模板 · 搜索框 · 命令列表 · 快捷键提示",
+     trigger:"可见按钮或快捷键打开，默认聚焦搜索框；候选结合当前位置排序，不隐藏全局命令。执行携带当前页面与选择对象。",
+     platform:"桌面适合键盘优先的居中面板；移动端改全屏搜索或底部命令页，不要求记物理键盘快捷键。",
+     a11y:"用对话框与组合框语义；支持上下箭头、Enter、Esc，关闭后焦点归位。持续展示快捷键提示并提供可见入口。"},
+    {id:"empty", emoji:"🪧", name:"空状态引导", cat:"新手入口",
+     desc:"空状态入口在用户第一次进入时说明 AI 能做什么，并用可点击示例帮助完成第一个真实任务。",
+     use:"首次进入、空会话，用户不清楚 AI 能力边界、需降低上手门槛时。",
+     diff:"不是日常任务入口，而是一次性教学入口；完成首次任务或主动跳过后应退出主流程。",
+     how:["一句话说清能力与边界，别堆功能","给 3 条左右可点击示例，降低「不知问什么」","可一键跳过，不强迫","引导过后不再反复强弹"],
+     trade:"反复打扰变噪音；示例要贴合真实场景，否则点了不实用反降信任。",
+     refs:["ChatGPT","Claude","Notion"],
+     avoid:"用户已熟悉产品、示例与角色无关，或教学内容完成后仍长期占据主界面时应避免。",
+     states:["首次进入","示例可选","准备数据","任务进行中","首次成功","已跳过"],
+     metrics:["首次任务发起率","首次任务成功率","新手流程退出率"],
+     rel:"新手与空状态 · 推荐问题 · 引导卡 · 示例按钮",
+     trigger:"仅首次进入、无历史或缺少必要数据时出现；示例点击进入低风险、反馈快的真实任务，完成或跳过后记录状态。",
+     platform:"桌面与移动端均保持首屏可读；移动端减少长说明，优先一条主任务和两三条示例，避免全屏强遮挡。",
+     a11y:"用标准标题、按钮与对话框语义，焦点进出路径完整。说明能力边界，示例用真实业务语言，提供永久跳过。"}
+  ],
+  matrix:{cols:["可发现性","上下文精度","低干扰","新手友好","移动适配"],
+    rows:[["导航栏按钮",5,1,3,5,5],["悬浮球",5,2,2,4,2],["工具栏图标",3,4,4,3,3],["划词唤起",3,5,5,3,2],["右键菜单",2,5,5,2,1],["命令面板",2,3,5,1,2],["就近触发",3,5,4,3,3],["空状态引导",5,2,3,5,5]]},
+  combos:[["AI Chat","导航入口 → 空状态引导 → 命令面板"],["Copilot","导航兜底 → 工具栏 → 划词 / 就近触发"],["Agent","主入口 → 任务快捷项 → 悬浮状态提醒"]],
+  pitfalls:["同一页面多个功能重复的 AI 入口","只放魔法图标，没有文字/提示/业务动作名","打开 AI 丢失选区与页面上下文","依赖悬停/右键，无移动端与键盘替代","首次引导、红点和动画反复无法永久关闭"],
+  checks:["页面有一个明确的主入口，其他入口承担不同角色","入口使用业务动作名称，不只依赖魔法图标","用户知道 AI 会读取当前页面、选区还是整个项目","入口打开后不丢失选区、附件和任务上下文","默认/聚焦/执行中/不可用/新结果状态均已定义","悬停、右键和快捷键都有移动端或可见入口兜底","所有入口都能通过键盘聚焦、触发和关闭","首次引导可跳过，完成后不反复强制出现","已定义入口点击、任务发起、误触和关闭指标","AI 不可用、权限不足和网络失败时仍有明确说明"]
+};
+
+/* ============ 渲染 ============ */
+const doc=document.getElementById("doc");
+function esc(s){return s;}
+function dots(n){let s="";for(let i=0;i<5;i++)s+=i<n?"●":"○";return s;}
+
+/* ============ 交互 demo HTML（每模式一个） ============ */
+function demoMarkup(id){
+  const demos={
+    nav:`<div class="demo-area"><div class="demo-head">▶ 交互案例 · 点击导航栏的「AI 助手」按钮</div>
+      <div class="demo-stage" id="navStage">
+        <div class="nav-demo"><span class="nd-brand">Acme 文档</span>
+          <span class="nd-item">首页</span><span class="nd-item">项目</span><span class="nd-item">数据</span>
+          <span class="nd-item nd-ai" id="ndAi">✦ AI 助手</span><span class="nd-user">👤</span>
+        </div>
+        <div class="nd-page"><b>项目概览</b><p>这里是当前页面内容。AI 助手入口稳定存在于顶部导航，无论滚动到哪一页都可随时唤起。</p></div>
+        <div class="nd-panel" id="ndPanel"><b>✦ AI 助手</b><p class="fp-s">我能基于当前页面帮你总结、生成、答疑。</p>
+          <button class="fp-btn" data-nd="总结本页">📌 总结本页</button><button class="fp-btn" data-nd="生成周报">📝 生成周报</button></div>
+        <div class="fp-result" id="ndRes"></div>
+      </div><div class="demo-note">导航入口 · 位置最稳定 · 可发现性最高 · 点击唤起侧栏 AI</div></div>`,
+    float:`<div class="demo-area"><div class="demo-head">▶ 交互案例 · 试试拖动右下角悬浮球，点击唤起 AI</div><div class="demo-stage" id="floatStage"><div class="demo-paper" id="floatPaper"><b>示例文档 · 新版报销流程</b><p>本周完成了新版报销流程的需求评审，交互稿已通过，正式进入开发阶段。</p><p>目标是把平均 3 天的报销审批压缩到 1 天内。</p></div><div class="floatball" id="floatball">✦</div><div class="floatpanel" id="floatpanel"><b>AI 助手</b><p class="fp-s">我能基于当前文档帮你总结、生成、答疑。</p><button class="fp-btn" data-act="总结要点">📌 总结要点</button><button class="fp-btn" data-act="生成周报">📝 生成周报</button><button class="fp-btn" data-act="提取待办">⚠️ 提取待办</button></div></div><div class="demo-note" id="floatNote">悬浮球可在区域内拖动 · 可自动吸边 · 点击展开 / 再点收起</div></div>`,
+    toolbar:`<div class="demo-area"><div class="demo-head">▶ 交互案例 · 选中一段文字，点工具栏的 ✦</div>
+      <div class="demo-stage" id="tbStage">
+        <div class="tb-bar"><b>文档</b><span class="tb-ic">B</span><span class="tb-ic"><i>I</i></span><span class="tb-ic tb-ai" id="tbAi">✦ AI</span></div>
+        <p class="tb-text" id="tbText">新版报销流程的目标是把原本平均 3 天的报销审批压缩到 1 天内。请用鼠标选中这句话里的「报销审批」几个字，然后点击上方工具栏的 ✦ AI。</p>
+        <div class="tb-menu" id="tbMenu"><button class="fp-btn" data-tb="改写">✍ 改写</button><button class="fp-btn" data-tb="精简">✂ 精简</button><button class="fp-btn" data-tb="正式化">🎩 更正式</button></div>
+        <div class="fp-result" id="tbRes"></div>
+      </div><div class="demo-note">工具栏入口 · AI 是编辑能力的一部分 · 上下文精确到当前文档/选区</div></div>`,
+    sel:`<div class="demo-area"><div class="demo-head">▶ 交互案例 · 用鼠标选中下方任意文字试试</div><div class="demo-stage" id="selStage"><p class="sel-para" id="selPara">本次评审共收集到 12 条修改意见，其中 8 条已在交互稿中闭环，其余 4 条涉及权限模型，待与后端确认后处理。请用鼠标拖选这段话里的任意部分，观察选区上方弹出的 AI 操作浮条。</p><div class="sel-bar" id="selBar" hidden><button class="fp-btn" data-sel="改写">✍ 改写</button><button class="fp-btn" data-sel="翻译">🌐 翻译</button><button class="fp-btn" data-sel="总结">📌 总结</button></div><div class="sel-result" id="selResult"></div></div><div class="demo-note">划词唤醒 · 选区即上下文 · 浮条不遮内容 · 选区消失自动收起</div></div>`,
+    ctx:`<div class="demo-area"><div class="demo-head">▶ 交互案例 · 右键点击下方文档节点</div>
+      <div class="demo-stage" id="ctxStage">
+        <div class="ctx-list">
+          <div class="ctx-file" id="ctxTarget" data-name="新版报销流程.md">📄 新版报销流程.md</div>
+          <div class="ctx-file">📄 需求文档.md</div>
+          <div class="ctx-file">📁 设计稿</div>
+        </div>
+        <div class="ctx-menu" id="ctxMenu">
+          <div class="cm-group" style="font-size:11px;color:#999;padding:3px 10px">文件</div>
+          <div class="cm-item">打开</div><div class="cm-item">重命名</div>
+          <div class="cm-sep"></div>
+          <div class="cm-group" style="font-size:11px;color:var(--anchor,#0b6bcf);padding:3px 10px">✦ AI 操作</div>
+          <div class="cm-item ai" data-ctx="总结文档">✦ 总结文档</div>
+          <div class="cm-item ai" data-ctx="提取待办">✦ 提取风险与待办</div>
+          <div class="cm-item ai" data-ctx="生成周报">✦ 生成周报</div>
+        </div>
+        <div class="fp-result" id="ctxRes"></div>
+      </div><div class="demo-note">右键菜单 · AI 项单独分组 · 随对象动态变化 · 移动端需长按替代</div></div>`,
+    near:`<div class="demo-area"><div class="demo-head">▶ 交互案例 · 鼠标悬停在下方段落，点 ✦ 就近操作</div>
+      <div class="demo-stage" id="nearStage">
+        <div class="near-card" id="nearCard"><div class="nc-head">数据看板 <span class="nc-near">✦</span></div>
+          <div class="nc-txt">本周销售数据同比增长 18%，其中华东区贡献最大。</div>
+        </div>
+        <div class="near-menu" id="nearMenu"><button class="fp-btn" data-near="总结这一段">📌 总结这一段</button><button class="fp-btn" data-near="生成图表">📊 生成图表</button></div>
+        <div class="fp-result" id="nearRes"></div>
+        <div class="demo-note" style="margin-top:8px">就近触发 · hover 对象出现 ✦ · 只处理当前对象 · 不扩大读取范围</div>
+      </div></div>`,
+    cmd:`<div class="demo-area"><div class="demo-head">▶ 交互案例 · 点击按钮或按 ⌘K 打开命令面板</div>
+      <div class="demo-stage" id="cmdStage" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:14px">
+        <button class="cmd-open" id="cmdOpen">⌘ 打开命令面板 <kbd>⌘K</kbd></button>
+        <div class="cmd-mask" id="cmdMask"></div>
+        <div class="cmd-panel" id="cmdPanel">
+          <div class="cmd-input"><span>⌘</span><input id="cmdInput" placeholder="输入命令或搜索…" autocomplete="off"></div>
+          <div class="cmd-list" id="cmdList"></div>
+          <div class="cmd-foot" id="cmdFoot">↑↓ 选择 · Enter 执行 · Esc 关闭</div>
+        </div>
+        <div class="fp-result" id="cmdRes" style="width:80%"></div>
+      </div></div>`,
+    empty:`<div class="demo-area"><div class="demo-head">▶ 交互案例 · 首次进入的空状态引导</div>
+      <div class="demo-stage" id="emptyStage" style="display:flex;align-items:center;justify-content:center">
+        <div class="empty-card" id="emptyCard">
+          <div class="ec-eyebrow">✦ AI 助手</div>
+          <div class="ec-title">嗨，我是知识库 AI 助手</div>
+          <div class="ec-sub">我能基于你的文档帮你总结、生成、答疑。试试这些：</div>
+          <button class="ec-btn" data-empty="总结这篇文档的要点">📌 总结这篇文档的要点</button>
+          <button class="ec-btn" data-empty="根据文档生成周报">📝 根据文档生成周报</button>
+          <button class="ec-btn" data-empty="提取其中的风险和待办">⚠️ 提取其中的风险和待办</button>
+          <div class="ec-skip" id="ecSkip">先跳过，我自己逛逛</div>
+          <div class="fp-result" id="ecRes"></div>
+        </div>
+      </div><div class="demo-note">空状态引导 · 首次教学入口 · 示例可点击 · 完成或跳过即退出</div></div>`
+  };
+  return demos[id]||'';
+}
+
+/* 侧栏目录 */
+const tree=document.getElementById("sideTree");
+let th=`<div class="side-group"><div>手册 · Handbook</div>
+  <a class="side-item on" href="#top">${MODULE.title}</a></div>
+  <div class="side-group"><div>入口模式</div>`;
+MODULE.patterns.forEach(p=>{th+=`<a class="side-item dim" href="#${p.id}">${p.emoji} ${p.name}</a>`;});
+th+=`</div><div class="side-group"><div>参考</div>
+  <a class="side-item dim" href="#matrix">决策矩阵</a>
+  <a class="side-item dim" href="#combo">组合方案</a>
+  <a class="side-item dim" href="#check">上线前检查</a></div>`;
+tree.innerHTML=th;
+
+/* 高亮当前节 */
+function spy(){
+  const items=document.querySelectorAll('.side-item');
+  items.forEach(i=>i.classList.remove('on'));
+  let cur="#top";
+  const links=[...items].map(a=>({id:a.getAttribute('href'),a})).filter(x=>x.id&&x.id!=="#top");
+  const pos=window.scrollY+120;
+  for(const x of links){const el=document.querySelector(x.id);if(el&&el.offsetTop<=pos)cur=x.id;}
+  items.forEach(i=>i.classList.toggle('on',i.getAttribute('href')===cur));
+}
+window.addEventListener('scroll',spy);
+
+/* 主文档 */
+function renderDoc(){
+  let h=``;
+  h+=`<div id="top"></div>
+  <div class="doc-head"><b>AI 交互设计知识库</b><span>/</span>${MODULE.title}</div>
+  <h1 class="title">${MODULE.title}</h1>
+  <p class="lead">${MODULE.lead}</p>`;
+
+  /* 目录大纲 */
+  h+=`<div class="outline"><div class="ot">本页目录</div>
+    ${MODULE.groups.map((g,i)=>`<a href="#grp${i}">${g.label} · ${g.items.length} 种</a>`).join("")}
+    ${MODULE.patterns.map(p=>`<a class="sub" href="#${p.id}">${p.emoji} ${p.name}</a>`).join("")}
+    <a href="#matrix">决策矩阵</a><a href="#combo">组合方案</a><a href="#check">上线前检查</a></div>`;
+
+  /* 分组锚点区 + 模式卡片总览 */
+  h+=`<hr class="doc-sep">`;
+  MODULE.groups.forEach((g,i)=>{
+    h+=`<div id="grp${i}" style="scroll-margin-top:60px"></div><h2 class="sec">${g.label}</h2>`;
+    const items=MODULE.patterns.filter(p=>p.cat===g.label);
+    items.forEach(p=>{
+      h+=`<div class="pat-card" onclick="location.hash='${p.id}';document.getElementById('${p.id}').scrollIntoView({behavior:'smooth'})">
+        <div class="pn">${p.emoji} ${p.name}</div><div class="pd">${p.desc}</div></div>`;
+    });
+  });
+
+  h+=`<hr class="doc-sep">`;
+
+  /* 各模式完整详情 */
+  MODULE.patterns.forEach(p=>{
+    h+=`<div id="${p.id}" style="scroll-margin-top:60px"></div>
+    <h3 class="pat">${p.emoji} ${p.name} <span style="font-size:13px;color:var(--muted);font-weight:400">· ${p.cat}</span></h3>
+    <div class="field-label">适用场景</div><div class="field-val">${p.use}</div>
+    <div class="field-label">与其他入口的差别</div><div class="field-val">${p.diff}</div>
+    <div class="field-label">实现要点</div><div class="field-val"><ul>${p.how.map(x=>`<li>${x}</li>`).join("")}</ul></div>
+    <div class="field-label">关键取舍</div><div class="field-val">${p.trade}</div>
+    <div class="field-label">参考产品</div><div class="field-val">${p.refs.map(r=>`<span class="pill">${r}</span>`).join("")}</div>
+    <div class="quote"><b>避免使用：</b>${p.avoid}</div>
+    <div class="field-label">关键状态</div><div class="field-val">${p.states.join(" · ")}</div>
+    <div class="field-label">关注指标</div><div class="field-val">${p.metrics.join(" · ")}</div>
+    <div class="field-label">关联模式</div><div class="field-val">${p.rel}</div>
+    <div class="field-label">触发与上下文</div><div class="field-val">${p.trigger}</div>
+    <div class="field-label">桌面 / 移动策略</div><div class="field-val">${p.platform}</div>
+    <div class="field-label">无障碍与文案</div><div class="field-val">${p.a11y}</div>
+    ${demoMarkup(p.id)}`;
+  });
+
+  h+=`<hr class="doc-sep">
+  <div id="matrix" style="scroll-margin-top:60px"></div><h2 class="sec">决策矩阵</h2>
+  <p class="body" style="color:var(--muted)">● 高 ○ 低 · 评分用于比较相对特征，不代表都应采用高分入口。</p>
+  <table><tr><th></th>${MODULE.matrix.cols.map(c=>`<th>${c}</th>`).join("")}</tr>`+
+  MODULE.matrix.rows.map(r=>`<tr><td><b>${r[0]}</b></td>${r.slice(1).map(n=>`<td class="dots">${dots(n)}</td>`).join("")}</tr>`).join("")+`</table>`;
+
+  h+=`<hr class="doc-sep">
+  <div id="combo" style="scroll-margin-top:60px"></div><h2 class="sec">组合方案</h2>
+  <p class="body">实际产品通常需要「主入口＋快捷入口＋兜底入口」，每类承担不同角色并保持动作结果一致。</p>
+  ${MODULE.combos.map(c=>`<div class="field-label">${c[0]}</div><div class="field-val" style="font-family:var(--mono);font-size:14px">${c[1]}</div>`).join("")}
+  <div class="field-label" style="margin-top:22px">常见反例</div>
+  ${MODULE.pitfalls.map(p=>`<div class="field-val" style="margin:4px 0">✕ ${p}</div>`).join("")}`;
+
+  h+=`<hr class="doc-sep">
+  <div id="check" style="scroll-margin-top:60px"></div><h2 class="sec">上线前检查</h2>
+  <p class="body" style="color:var(--muted)">一个入口能被看见，不等于它已经设计完成。</p>
+  ${MODULE.checks.map(c=>`<div class="check"><input type="checkbox">${c}</div>`).join("")}`;
+
+  doc.innerHTML=h;
+}
+renderDoc();
+initDemos();
+
+/* ============ 交互 demo ============ */
+function initDemos(){
+  /* —— 悬浮球拖动 —— */
+  const stage=document.getElementById("floatStage");
+  if(stage){
+    const ball=document.getElementById("floatball");
+    const panel=document.getElementById("floatpanel");
+    const note=document.getElementById("floatNote");
+    let drag=false,offX=0,offY=0;
+    // 点击切换面板
+    ball.addEventListener("click",e=>{
+      if(drag)return;
+      panel.classList.toggle("show");
+    });
+    // 拖动
+    ball.addEventListener("mousedown",e=>{
+      drag=false;offX=e.clientX-ball.getBoundingClientRect().left;offY=e.clientY-ball.getBoundingClientRect().top;
+      ball.classList.add("dragging");
+      const move=ev=>{
+        drag=true;ball.classList.add("dragging");
+        const r=stage.getBoundingClientRect();
+        let x=ev.clientX-offX-r.left,y=ev.clientY-offY-r.top;
+        x=Math.max(0,Math.min(r.width-ball.offsetWidth,x));
+        y=Math.max(0,Math.min(r.height-ball.offsetHeight,y));
+        ball.style.left=x+"px";ball.style.right="auto";ball.style.top=y+"px";ball.style.bottom="auto";
+        note.textContent="悬浮球拖动中…释放后自动吸边";
+      };
+      const up=()=>{
+        ball.classList.remove("dragging");
+        document.removeEventListener("mousemove",move);
+        document.removeEventListener("mouseup",up);
+        // 吸边
+        const r=stage.getBoundingClientRect();
+        const br=ball.getBoundingClientRect();
+        const distL=br.left-r.left,distR=r.right-br.right;
+        ball.style.transition="left .25s ease";
+        if(distL<distR){ball.style.left="8px";}else{ball.style.left=(r.width-ball.offsetWidth-8)+"px";}
+        ball.style.right="auto";
+        setTimeout(()=>{ball.style.transition="";note.textContent="悬浮球可在区域内拖动 · 可自动吸边 · 点击展开 / 再点收起";},300);
+      };
+      document.addEventListener("mousemove",move);
+      document.addEventListener("mouseup",up);
+    });
+    // 面板按钮
+    panel.querySelectorAll(".fp-btn").forEach(b=>{
+      b.addEventListener("click",()=>{
+        let r=document.createElement("div");r.className="fp-result";
+        r.style.display="block";
+        r.textContent="✨ 已执行：「"+b.dataset.act+"」—— 在真实产品中，这会基于当前文档上下文调用 AI 完成该动作。";
+        panel.appendChild(r);
+      });
+    });
+    // 初始吸右
+    ball.style.right="18px";ball.style.bottom="16px";
+  }
+  /* —— 划词唤起 —— */
+  const para=document.getElementById("selPara");
+  if(para){
+    const bar=document.getElementById("selBar");
+    const result=document.getElementById("selResult");
+    const stage=document.getElementById("selStage");
+    function positionBar(){
+      const sel=window.getSelection();
+      if(!sel.rangeCount||sel.isCollapsed){bar.hidden=true;return;}
+      const range=sel.getRangeAt(0);
+      if(!stage.contains(range.startContainer)&&!stage.contains(range.endContainer)){bar.hidden=true;return;}
+      const rect=range.getBoundingClientRect();
+      const stageRect=stage.getBoundingClientRect();
+      bar.style.position="absolute";
+      bar.style.left=Math.max(4,rect.left-stageRect.left)+"px";
+      bar.style.top=Math.max(4,rect.top-stageRect.top-rect.height-44)+"px";
+      bar.hidden=false;
+    }
+    document.addEventListener("mouseup",()=>{setTimeout(positionBar,30);});
+    para.addEventListener("mouseup",e=>{e.stopPropagation();});
+    document.addEventListener("mousedown",e=>{
+      if(!bar.contains(e.target)){setTimeout(()=>{if(window.getSelection().isCollapsed)bar.hidden=true;},120);}
+    });
+    bar.querySelectorAll(".fp-btn").forEach(b=>{
+      b.addEventListener("click",()=>{
+        const sel=window.getSelection().toString().trim();
+        result.style.display="block";
+        const acts={改写:"AI 已对选中文字进行改写优化。",翻译:"AI 已将选中内容翻译。",总结:"AI 已对选中内容生成摘要。"};
+        result.textContent="✨ 「"+b.dataset.sel+"」→ "+acts[b.dataset.sel]+(sel?"（选中的内容是：“"+sel.slice(0,40)+(sel.length>40?"…":"")+"”）":"");
+        window.getSelection().removeAllRanges();
+        bar.hidden=true;
+      });
+    });
+  }
+  /* —— 导航栏按钮 demo —— */
+  const navStage=document.getElementById("navStage");
+  if(navStage){
+    const ai=document.getElementById("ndAi");
+    const panel=document.getElementById("ndPanel");
+    ai.addEventListener("click",()=>{panel.classList.toggle("show");});
+    panel.querySelectorAll(".fp-btn").forEach(b=>{
+      b.addEventListener("click",()=>{
+        const r=document.getElementById("ndRes");
+        r.style.display="block";
+        r.textContent="✨ 已执行「"+b.dataset.nd+"」—— 在真实产品中，AI 助手会读取当前页面内容完成该动作。";
+      });
+    });
+  }
+  /* —— 工具栏 demo —— */
+  const tbStage=document.getElementById("tbStage");
+  if(tbStage){
+    const text=document.getElementById("tbText");
+    const menu=document.getElementById("tbMenu");
+    const ai=document.getElementById("tbAi");
+    let marked="";
+    text.addEventListener("mouseup",()=>{
+      const sel=window.getSelection().toString().trim();
+      if(sel){marked=sel;menu.classList.add("show");}
+      else{menu.classList.remove("show");}
+    });
+    document.addEventListener("mousedown",e=>{if(!menu.contains(e.target)&&e.target!==ai){menu.classList.remove("show");}});
+    ai.addEventListener("click",()=>{if(marked){menu.classList.add("show");}else{const r=document.getElementById("tbRes");r.style.display="block";r.textContent="请先选中一段文字，再点击 ✦ AI。";}});
+    menu.querySelectorAll(".fp-btn").forEach(b=>{
+      b.addEventListener("click",()=>{
+        const r=document.getElementById("tbRes");
+        r.style.display="block";
+        r.textContent="✨「"+b.dataset.tb+"」已应用到选中内容："+(marked?marked.slice(0,30)+(marked.length>30?"…":""):"");
+        menu.classList.remove("show");window.getSelection().removeAllRanges();
+      });
+    });
+  }
+  /* —— 右键菜单 demo —— */
+  const ctxStage=document.getElementById("ctxStage");
+  if(ctxStage){
+    const target=document.getElementById("ctxTarget");
+    const menu=document.getElementById("ctxMenu");
+    target.addEventListener("contextmenu",e=>{
+      e.preventDefault();
+      const sr=ctxStage.getBoundingClientRect();
+      let x=e.clientX-sr.left,y=e.clientY-sr.top;
+      menu.style.left=Math.min(x,sr.width-210)+"px";
+      menu.style.top=Math.min(y,sr.height-menu.offsetHeight)+"px";
+      menu.classList.add("show");
+      target.classList.add("on");
+    });
+    document.addEventListener("click",e=>{if(!menu.contains(e.target)){menu.classList.remove("show");target.classList.remove("on");}});
+    menu.querySelectorAll(".cm-item.ai").forEach(it=>{
+      it.addEventListener("click",()=>{
+        const r=document.getElementById("ctxRes");
+        r.style.display="block";
+        r.textContent="✨「"+it.dataset.ctx+"」已对「"+target.dataset.name+"」执行 —— 真实产品会读取该文件内容完成动作。";
+        menu.classList.remove("show");target.classList.remove("on");
+      });
+    });
+  }
+  /* —— 就近触发 demo —— */
+  const nearStage=document.getElementById("nearStage");
+  if(nearStage){
+    const card=document.getElementById("nearCard");
+    const menu=document.getElementById("nearMenu");
+    card.querySelector(".nc-near").addEventListener("click",()=>{
+      menu.classList.toggle("show");
+      // 菜单定位到卡片旁
+      const cr=card.getBoundingClientRect(),sr=nearStage.getBoundingClientRect();
+      menu.style.position="absolute";
+      menu.style.left=(cr.left-sr.left+16)+"px";
+      menu.style.top=(cr.top-sr.top+card.offsetHeight+4)+"px";
+    });
+    document.addEventListener("mousedown",e=>{if(!menu.contains(e.target)&&!card.contains(e.target))menu.classList.remove("show");});
+    menu.querySelectorAll(".fp-btn").forEach(b=>{
+      b.addEventListener("click",()=>{
+        const r=document.getElementById("nearRes");
+        r.style.display="block";r.style.marginTop="8px";
+        r.textContent="✨「"+b.dataset.near+"」已对「数据看板」卡片执行 —— 只处理当前对象，不扩大读取范围。";
+        menu.classList.remove("show");
+      });
+    });
+  }
+  /* —— 命令面板 demo —— */
+  const cmdStage=document.getElementById("cmdStage");
+  if(cmdStage){
+    const panel=document.getElementById("cmdPanel");
+    const mask=document.getElementById("cmdMask");
+    const input=document.getElementById("cmdInput");
+    const list=document.getElementById("cmdList");
+    const foot=document.getElementById("cmdFoot");
+    const res=document.getElementById("cmdRes");
+    const cmds=[
+      {t:"✦ AI 总结当前文档",g:"AI 指令"}, {t:"✦ 根据文档生成周报",g:"AI 指令"},
+      {t:"✦ 提取风险与待办",g:"AI 指令"}, {t:"✦ AI 改写选中内容",g:"AI 指令"},
+      {t:"跳转到「数据」",g:"导航"}, {t:"新建文档",g:"常用"}, {t:"导出 PDF",g:"常用"}
+    ];
+    function openCmd(){panel.classList.add("show");mask.classList.add("show");setTimeout(()=>input.focus(),50);renderCmds("");}
+    function closeCmd(){panel.classList.remove("show");mask.classList.remove("show");}
+    function renderCmds(q){
+      const qq=q.trim().toLowerCase();
+      const f=cmds.filter(c=>!qq||c.t.toLowerCase().includes(qq));
+      list.innerHTML=f.map((c,i)=>`<div class="cmd-item2 ${i===0?"sel":""}" data-i="${i}"><span>${c.t}</span><span class="k">↵</span></div>`).join("")||'<div style="padding:10px;color:#999;font-size:13px">无结果</div>';
+      list.querySelectorAll(".cmd-item2").forEach(el=>{
+        el.addEventListener("mousemove",()=>{list.querySelectorAll(".cmd-item2").forEach(x=>x.classList.remove("sel"));el.classList.add("sel");});
+        el.addEventListener("click",()=>{runCmd(f[el.dataset.i].t);});
+      });
+    }
+    function runCmd(t){
+      res.style.display="block";res.textContent="✨ 已执行：「"+t+"」";
+      closeCmd();
+    }
+    document.getElementById("cmdOpen").addEventListener("click",openCmd);
+    mask.addEventListener("click",closeCmd);
+    input.addEventListener("input",e=>renderCmds(input.value));
+    input.addEventListener("keydown",e=>{
+      const items=[...list.querySelectorAll(".cmd-item2")];
+      if(e.key==="ArrowDown"){e.preventDefault();const ci=items.findIndex(x=>x.classList.contains("sel"));if(ci>-1&&ci<items.length-1){items[ci].classList.remove("sel");items[ci+1].classList.add("sel");}}
+      else if(e.key==="ArrowUp"){e.preventDefault();const ci=items.findIndex(x=>x.classList.contains("sel"));if(ci>0){items[ci].classList.remove("sel");items[ci-1].classList.add("sel");}}
+      else if(e.key==="Enter"){const ci=items.findIndex(x=>x.classList.contains("sel"));if(ci>-1)runCmd(cmds.filter(c=>c.t.toLowerCase().includes(input.value.trim().toLowerCase()))[ci]?.t);}
+      else if(e.key==="Escape"){closeCmd();}
+    });
+    document.addEventListener("keydown",e=>{
+      if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"){e.preventDefault();panel.classList.contains("show")?closeCmd():openCmd();}
+    });
+    // 预渲染隐藏面板内容,以便回车逻辑
+    renderCmds("");
+    panel.classList.remove("show");
+  }
+  /* —— 空状态 demo —— */
+  const emptyStage=document.getElementById("emptyStage");
+  if(emptyStage){
+    const card=document.getElementById("emptyCard");
+    card.querySelectorAll(".ec-btn").forEach(b=>{
+      b.addEventListener("click",()=>{
+        const r=document.getElementById("ecRes");
+        r.style.display="block";
+        r.textContent="✨ 正在执行：「"+b.dataset.empty+"」—— 完成后此引导可收起，进入主流程。";
+      });
+    });
+    document.getElementById("ecSkip").addEventListener("click",()=>{
+      card.innerHTML='<div style="padding:20px 0;color:#999;font-size:13.5px">已跳过引导，直接进入主界面 ✕</div>';
+    });
+  }
+}
+function doSearch(q){
+  q=q.trim().toLowerCase();
+  if(!q){/* 暂不实现隐藏逻辑，完整版接入 */return;}
+}
+function toggleSidebar(){
+  const sb=document.getElementById("sidebar");
+  sb.classList.toggle('closed');sb.classList.toggle('open');
+  document.getElementById("content").classList.toggle('shifted');
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>电子杂志风 · A 入口设计（示范）</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=Noto+Serif+SC:wght@400;500;600;900&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  /* ===== 电子杂志风 · Style A · 主题：墨水经典 (Monocle) ===== */
+  :root{
+    --ink:#0a0a0b; --paper:#f1efea; --paper-tint:#e8e5de; --ink-tint:#18181a;
+    --mono:"IBM Plex Mono",monospace;
+    --serif-en:"Playfair Display",Georgia,serif;
+    --serif-zh:"Noto Serif SC",serif;
+    --sans-zh:"Noto Sans SC",sans-serif;
+    --line:rgba(10,10,11,.22);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--paper);color:var(--ink);font-family:var(--sans-zh);line-height:1.7;-webkit-font-smoothing:antialiased}
+
+  /* 杂志 masthead 报头 */
+  .masthead{border-bottom:3px double var(--ink);padding:14px 7vw;display:flex;justify-content:space-between;align-items:center}
+  .masthead .vol{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase}
+  .masthead .brand{font-family:var(--serif-zh);font-weight:900;font-size:20px;letter-spacing:.05em}
+  .masthead .brand span{font-family:var(--serif-en);font-style:italic;font-weight:400;font-size:15px}
+
+  /* 文章区 */
+  .issue{padding:44px 7vw 70px;max-width:1120px;margin:0 auto}
+  .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#666;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+  .kicker::after{content:"";flex:0 0 40px;height:1px;background:var(--line)}
+  h1.title{font-family:var(--serif-zh);font-weight:900;font-size:clamp(34px,5vw,52px);line-height:1.12;letter-spacing:-.01em;margin-bottom:18px}
+  .dek{font-size:16px;color:#444;max-width:70ch;line-height:1.8;margin-bottom:8px}
+  .byline{font-family:var(--serif-en);font-style:italic;color:#888;font-size:14px;border-bottom:1px solid var(--line);padding-bottom:22px;margin-bottom:40px}
+
+  .section-label{font-family:var(--mono);font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--ink);background:var(--paper);border:1px solid var(--ink);padding:6px 14px;display:inline-block;margin-bottom:22px}
+  .section-label.dark{background:var(--ink);color:var(--paper)}
+  h2.section-h{font-family:var(--serif-zh);font-weight:700;font-size:26px;margin-bottom:28px;letter-spacing:.01em}
+
+  /* 8 种入口 · 杂志卡片网 */
+  .entries{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:18px;margin-bottom:56px}
+  .entry{border:1px solid var(--line);background:#fff;padding:22px 20px 18px;display:flex;flex-direction:column;gap:8px;transition:transform .2s}
+  .entry:hover{transform:translateY(-3px);box-shadow:0 8px 20px rgba(0,0,0,.06)}
+  .entry .ic{font-size:26px;line-height:1}
+  .entry .grp{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;color:#999}
+  .entry h3{font-family:var(--serif-zh);font-weight:700;font-size:18px}
+  .entry .fit{font-size:13px;color:#666}
+  .entry .refs{font-size:11px;color:#999;margin-top:auto;padding-top:8px;border-top:1px dotted var(--line)}
+
+  /* 决策矩阵 */
+  .matrix{margin-bottom:56px;overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13px;background:#fff}
+  thead th{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;text-align:left;padding:10px 12px;border-bottom:2px solid var(--ink);color:#555}
+  tbody td{padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:middle}
+  tbody tr:hover{background:#faf9f5}
+  .nm{font-family:var(--serif-zh);font-weight:600}
+  .fit-txt{font-family:var(--serif-en);font-style:italic;color:#333}
+
+  /* 组合方案 + 反例 */
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-bottom:56px}
+  .panel{border:1px solid var(--line);padding:24px;background:#fff}
+  .panel h4{font-family:var(--serif-zh);font-weight:700;font-size:15px;letter-spacing:.05em;margin-bottom:16px;padding-bottom:10px;border-bottom:1px solid var(--line)}
+  .combo{margin-bottom:18px;padding:14px;background:#f7f5f0;border-left:3px solid var(--ink)}
+  .combo .cn{font-weight:700;font-size:14px}
+  .combo .flow{font-family:var(--mono);font-size:11.5px;color:#555;margin-top:6px}
+  .x{display:flex;gap:10px;font-size:13.5px;color:#444;margin-bottom:13px}
+  .x .mark{flex:0 0 auto;font-weight:700}
+  .x .mark.no{color:#b00}
+
+  .foot{border-top:1px solid var(--ink);margin-top:20px;padding:18px 7vw 30px;font-family:var(--mono);font-size:10px;letter-spacing:.15em;color:#888;text-transform:uppercase;display:flex;justify-content:space-between}
+
+  @media(max-width:720px){.two{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <div class="vol">AI 交互设计 · 图鉴 No.01</div>
+  <div class="brand">入口设计 <span>· The Entry</span></div>
+  <div class="vol">Youthce 知识库 × 示范页</div>
+</div>
+
+<div class="issue">
+  <div class="kicker">Module A · AI 入口设计</div>
+  <h1 class="title">在哪个时刻、从哪里唤起 AI</h1>
+  <p class="dek">入口设计决定用户在什么时刻、从哪里唤起 AI，以及系统会带入哪些任务上下文。好的入口不只要容易找到，更要贴近当前任务，并让用户清楚知道点击后会发生什么。</p>
+  <div class="byline">— 不是哪个入口最好，而是哪个入口适合此刻 —</div>
+
+  <div class="section-label dark">图鉴 · 八种入口</div>
+  <h2 class="section-h">每一类入口，承担不同角色</h2>
+
+  <div class="entries">
+    <div class="entry"><div class="ic">🛠️</div><div class="grp">常驻入口</div><h3>工具栏图标</h3><p class="fit">编辑场景内即时改写、总结、生成</p><div class="refs">WPS AI · Figma · Canva</div></div>
+    <div class="entry"><div class="ic">📍</div><div class="grp">上下文入口</div><h3>就近触发</h3><p class="fit">段落 / 单元格 / 卡片级局部操作</p><div class="refs">Notion · Coda · 飞书</div></div>
+    <div class="entry"><div class="ic">🔵</div><div class="grp">常驻入口</div><h3>悬浮球</h3><p class="fit">跨页面随时唤起，可拖动吸边</p><div class="refs">Copilot · Intercom · Crisp</div></div>
+    <div class="entry"><div class="ic">✍️</div><div class="grp">上下文入口</div><h3>划词唤起</h3><p class="fit">选区即任务上下文，随选随用</p><div class="refs">Notion · Craft · 沉浸翻译</div></div>
+    <div class="entry"><div class="ic">⌨️</div><div class="grp">效率入口</div><h3>命令面板</h3><p class="fit">⌘K 不离开键盘启动任务</p><div class="refs">Linear · Raycast · VS Code</div></div>
+    <div class="entry"><div class="ic">🧭</div><div class="grp">常驻入口</div><h3>导航栏按钮</h3><p class="fit">最稳定的一级功能入口</p><div class="refs">Gemini · Slack · Linear</div></div>
+    <div class="entry"><div class="ic">🖱️</div><div class="grp">上下文入口</div><h3>右键菜单</h3><p class="fit">低频、进阶、依赖具体对象</p><div class="refs">VS Code · Cursor · Figma</div></div>
+    <div class="entry"><div class="ic">🪧</div><div class="grp">新手入口</div><h3>空状态引导</h3><p class="fit">首次进入给第一个真实任务</p><div class="refs">ChatGPT · Claude · Notion</div></div>
+  </div>
+
+  <div class="section-label">决策矩阵</div>
+  <h2 class="section-h">一个入口能被看见，不等于它已经设计完成</h2>
+  <div class="matrix">
+    <table>
+      <thead><tr><th>入口</th><th>发现</th><th>精度</th><th>低干扰</th><th>新手</th><th>移动</th><th>更适合</th></tr></thead>
+      <tbody>
+        <tr><td class="nm">🧭 导航栏按钮</td><td>●●●●●</td><td>●○○○○</td><td>●●●○○</td><td>●●●●●</td><td>●●●●●</td><td class="fit-txt">核心 AI 能力</td></tr>
+        <tr><td class="nm">🔵 悬浮球</td><td>●●●●●</td><td>●●○○○</td><td>●●○○○</td><td>●●●●○</td><td>●●○○○</td><td class="fit-txt">跨页面随时唤起</td></tr>
+        <tr><td class="nm">🛠️ 工具栏图标</td><td>●●●○○</td><td>●●●●○</td><td>●●●●○</td><td>●●●○○</td><td>●●●○○</td><td class="fit-txt">编辑器 Copilot</td></tr>
+        <tr><td class="nm">✍️ 划词唤起</td><td>●●●○○</td><td>●●●●●</td><td>●●●●●</td><td>●●●○○</td><td>●●○○○</td><td class="fit-txt">文字局部处理</td></tr>
+        <tr><td class="nm">🖱️ 右键菜单</td><td>●●○○○</td><td>●●●●●</td><td>●●●●●</td><td>●●○○○</td><td>●○○○○</td><td class="fit-txt">桌面端进阶操作</td></tr>
+        <tr><td class="nm">⌨️ 命令面板</td><td>●●○○○</td><td>●●●○○</td><td>●●●●●</td><td>●○○○○</td><td>●●○○○</td><td class="fit-txt">熟练用户提效</td></tr>
+        <tr><td class="nm">📍 就近触发</td><td>●●●○○</td><td>●●●●●</td><td>●●●●○</td><td>●●●○○</td><td>●●●○○</td><td class="fit-txt">对象级局部任务</td></tr>
+        <tr><td class="nm">🪧 空状态引导</td><td>●●●●●</td><td>●●○○○</td><td>●●●○○</td><td>●●●●●</td><td>●●●●●</td><td class="fit-txt">新手首次成功</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="section-label">组合方案 · 常见反例</div>
+  <h2 class="section-h">主入口 + 快捷入口 + 兜底入口</h2>
+  <div class="two">
+    <div class="panel">
+      <h4>组合方案</h4>
+      <div class="combo"><div class="cn">AI Chat</div><div class="flow">导航入口 → 空状态引导 → 命令面板</div></div>
+      <div class="combo"><div class="cn">Copilot</div><div class="flow">导航兜底 → 工具栏 → 划词 / 就近触发</div></div>
+      <div class="combo"><div class="cn">Agent</div><div class="flow">主入口 → 任务快捷项 → 悬浮状态提醒</div></div>
+    </div>
+    <div class="panel">
+      <h4>反例 · 入口越醒目越要负责</h4>
+      <div class="x"><span class="mark no">×</span>同一页多个功能重复的 AI 入口</div>
+      <div class="x"><span class="mark no">×</span>只放魔法图标，没有文字与业务动作名</div>
+      <div class="x"><span class="mark no">×</span>打开 AI 丢失选区与页面上下文</div>
+      <div class="x"><span class="mark no">×</span>依赖悬停/右键，无移动端与键盘替代</div>
+      <div class="x"><span class="mark no">×</span>首次引导、红点动画反复无法关闭</div>
+    </div>
+  </div>
+</div>
+
+<div class="foot">
+  <span>Style A · 电子杂志 × 电子墨水</span>
+  <span>示范页 · 参考 guizang-ppt-skill 设计语言</span>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,11 @@
+import fs from 'node:fs';
+const h = fs.readFileSync('song-vocab-player.html', 'utf8');
+console.log('size:', (h.length/1024).toFixed(0) + 'KB');
+console.log('has DOCTYPE:', h.startsWith('<!DOCTYPE'));
+console.log('has DATA:', h.includes('const DATA = '));
+console.log('has highlightLyrics:', h.includes('highlightLyrics'));
+console.log('has closing html:', h.trimEnd().endsWith('</html>'));
+const m = h.match(/"songs":\[/);
+console.log('has songs array:', !!m);
+const idMatches = h.match(/"id":\d+/g);
+console.log('song count:', idMatches ? idMatches.length : 0);

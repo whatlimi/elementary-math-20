@@ -497,6 +497,110 @@
     .cover-buddies{font-size:1.8rem;margin-bottom:8px}
     .cover-title{margin:12px 0 6px}
   }
+
+  .range-tabs{display:flex;gap:10px;justify-content:center;margin-bottom:12px}
+  .cover-box .range-tabs{max-width:330px;margin:0 auto 24px}
+  .range-tab{
+    flex:1;max-width:160px;font-size:1rem;font-weight:800;padding:11px 12px;
+    font-family:inherit;color:var(--ink);letter-spacing:1px;
+    background:var(--card);border:3px solid var(--ink);border-radius:16px;
+    box-shadow:var(--sh1),var(--inset);cursor:pointer;transition:transform .12s,background .2s;
+  }
+  .range-tab.on{background:linear-gradient(180deg,#c3dcff,#8db8f5);color:#fff;text-shadow:0 1px 0 rgba(61,46,42,.35)}
+  .range-tab:active{transform:translateY(3px)}
+
+  .teach-overlay{
+    position:fixed;inset:0;z-index:80;display:none;flex-direction:column;
+    background:
+      radial-gradient(circle at 14% 14%,#ffe3f0 0%,transparent 42%),
+      radial-gradient(circle at 86% 12%,#d9f1ff 0%,transparent 40%),
+      radial-gradient(circle at 84% 86%,#fff0d4 0%,transparent 44%),
+      linear-gradient(160deg,#fff8ec,#ffeef5 55%,#e8f7f2);
+    overflow:hidden;
+  }
+  .teach-overlay.show{display:flex}
+  .teach-box{
+    flex:1;display:flex;flex-direction:column;width:100%;max-width:520px;
+    margin:0 auto;padding:18px 16px 20px;overflow:hidden;
+  }
+  .teach-head{display:flex;align-items:center;gap:14px;margin-bottom:14px;flex-shrink:0}
+  .teach-avatar{
+    font-size:3.2rem;line-height:1;filter:drop-shadow(0 4px 0 rgba(61,46,42,.15));
+    animation:buddyBob 2.6s ease-in-out infinite;
+  }
+  .teach-head h2{font-size:1.25rem;font-weight:800}
+  .teach-head p{font-size:.88rem;font-weight:600;color:#a08a78;margin-top:2px}
+  .teach-stage{
+    flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    background:var(--card);border:3px solid var(--ink);border-radius:24px;
+    box-shadow:var(--sh-card);padding:20px 18px;
+  }
+  .teach-case{display:none}
+  .teach-case.on{display:block;animation:fadeUp .4s both}
+  .teach-tag{
+    display:inline-block;font-size:.82rem;font-weight:800;padding:4px 12px;border-radius:99px;
+    background:linear-gradient(180deg,#ffe9a8,#ffc94d);border:2.5px solid var(--ink);margin-bottom:12px;
+  }
+  .teach-title{font-size:1.15rem;font-weight:800;margin-bottom:10px}
+  .teach-q{
+    font-size:2rem;font-weight:900;letter-spacing:2px;font-variant-numeric:tabular-nums;
+    text-align:center;padding:10px 18px;margin-bottom:16px;
+    background:linear-gradient(180deg,#fff9ed,#fff0d8);border:3px solid var(--ink);
+    border-radius:18px;box-shadow:var(--inset);display:inline-block;
+  }
+  .teach-qwrap{text-align:center}
+  .teach-steps{display:flex;flex-direction:column;gap:12px}
+  .teach-step{
+    display:none;align-items:center;gap:12px;text-align:left;
+    background:linear-gradient(180deg,#fff9ed,#fff3da);
+    border:3px solid var(--lemon-deep);border-radius:16px;padding:12px 14px;
+    box-shadow:var(--inset);
+  }
+  .teach-step.on{display:flex;animation:fadeUp .4s both}
+  .teach-step .no{
+    flex-shrink:0;width:32px;height:32px;border-radius:50%;
+    background:linear-gradient(180deg,#ff9ec4,#ff5a9e);color:#fff;
+    display:flex;align-items:center;justify-content:center;
+    font-size:1rem;font-weight:900;border:2.5px solid var(--ink);
+  }
+  .teach-step .txt{flex:1;font-size:1rem;font-weight:700;line-height:1.5}
+  .teach-step .txt b{color:var(--coral)}
+  .teach-step .eq{
+    font-size:1.15rem;font-weight:900;letter-spacing:1px;font-variant-numeric:tabular-nums;
+    color:var(--pink-deep);white-space:nowrap;
+  }
+  .teach-tip{
+    margin-top:14px;padding:12px 14px;border-radius:16px;
+    background:linear-gradient(180deg,#eafff5,#d9f8ec);
+    border:3px solid var(--mint-deep);font-size:.95rem;font-weight:700;line-height:1.5;
+  }
+  .teach-tip b{color:var(--mint-deep)}
+  .teach-foot{display:flex;align-items:center;gap:14px;margin-top:16px;flex-shrink:0}
+  .teach-dots{display:flex;gap:7px;flex:1}
+  .teach-dots span{width:11px;height:11px;border-radius:50%;background:#d0bfae;border:2px solid var(--ink);transition:all .25s}
+  .teach-dots span.on{background:var(--lemon);transform:scale(1.25)}
+  .teach-dots span.seen{background:var(--mint-deep)}
+  .teach-foot .btn{flex-shrink:0;min-width:150px;padding:14px 18px}
+  .teach-skip{
+    position:absolute;top:16px;right:16px;font-size:.85rem;font-weight:700;
+    padding:8px 14px;font-family:inherit;color:var(--ink);
+    background:var(--card);border:2.5px solid var(--ink);border-radius:12px;
+    box-shadow:var(--sh1),var(--inset);cursor:pointer;z-index:2;
+  }
+  .teach-skip:active{transform:translateY(2px)}
+
+  @media (max-width:480px){
+    .range-tab{font-size:.92rem;padding:10px 8px}
+    .teach-box{padding:14px 12px 16px}
+    .teach-head h2{font-size:1.1rem}
+    .teach-avatar{font-size:2.7rem}
+    .teach-stage{padding:16px 14px;border-radius:20px}
+    .teach-q{font-size:1.7rem;padding:8px 14px}
+    .teach-step{padding:10px 12px;gap:10px}
+    .teach-step .txt{font-size:.92rem}
+    .teach-step .eq{font-size:1.02rem}
+    .teach-foot .btn{min-width:120px;font-size:1rem;padding:12px 14px}
+  }
 </style>
 </head>
 <body>
@@ -509,7 +613,11 @@
   <div class="cover-box">
     <div class="cover-buddies" id="coverBuddies"></div>
     <h2 class="cover-title"><span>数</span><span>学</span><span>乐</span><span>园</span></h2>
-    <p class="cover-sub">20 以内加减法 · 边玩边学</p>
+    <p class="cover-sub" id="coverSub">20 以内加减法 · 边玩边学</p>
+    <div class="range-tabs">
+      <button class="range-tab on" id="tab20" data-range="20">20 以内</button>
+      <button class="range-tab" id="tab50" data-range="50">50 以内</button>
+    </div>
     <button class="start-btn" id="startBtn">开 始</button>
     <p class="cover-hint">全对一套，点亮一只小伙伴！</p>
   </div>
@@ -519,7 +627,7 @@
   <header>
     <button class="home-btn" id="homeBtn" title="回封面">🏠</button>
     <button class="buddy-btn" id="buddyBtn" title="换小伙伴">🐱</button>
-    <h1>20以内加减法乐园</h1>
+    <h1 id="gameTitle">20以内加减法乐园</h1>
     <button class="mute-btn" id="muteBtn" title="音效开关">🔔</button>
   </header>
 
@@ -546,7 +654,7 @@
   </main>
 
   <footer>
-    <button class="chip on" data-mode="mix">🎲 混合</button>
+    <button class="chip" id="teachBtn" style="display:none">📖 看教学</button>
   </footer>
 </section>
 
@@ -596,6 +704,24 @@
   </div>
 </div>
 
+<div class="teach-overlay" id="teachOverlay">
+  <button class="teach-skip" id="teachSkipBtn">跳过 ✕</button>
+  <div class="teach-box">
+    <div class="teach-head">
+      <span class="teach-avatar">🦊</span>
+      <div>
+        <h2>50 以内加减法小课堂</h2>
+        <p>跟灵灵一起学会新本领！</p>
+      </div>
+    </div>
+    <div class="teach-stage" id="teachStage"></div>
+    <div class="teach-foot">
+      <div class="teach-dots" id="teachDots"></div>
+      <button class="btn main" id="teachNextBtn">下一步 ▶️</button>
+    </div>
+  </div>
+</div>
+
 <div class="stats-backdrop" id="statsOverlay"></div>
 <div class="stats-panel" id="statsPanel">
   <div class="stats-head">
@@ -626,7 +752,7 @@ const COMPANIONS = [
   {emoji:"🐼", name:"团团"},
   {emoji:"🐶", name:"旺旺"}
 ];
-const BUDDIES = [
+const BUDDIES_20 = [
   {emoji:"🐱", name:"喵喵"},
   {emoji:"🐰", name:"跳跳"},
   {emoji:"🐻", name:"抱抱"},
@@ -648,6 +774,29 @@ const BUDDIES = [
   {emoji:"🦭", name:"圆圆"},
   {emoji:"🦔", name:"刺刺"}
 ];
+const BUDDIES_50 = [
+  {emoji:"🦕", name:"长长"},
+  {emoji:"🦖", name:"暴暴"},
+  {emoji:"🐲", name:"龙龙"},
+  {emoji:"🦚", name:"屏屏"},
+  {emoji:"🦜", name:"巧巧"},
+  {emoji:"🦩", name:"粉粉"},
+  {emoji:"🦢", name:"白白"},
+  {emoji:"🦥", name:"懒懒"},
+  {emoji:"🦦", name:"水水"},
+  {emoji:"🦫", name:"坝坝"},
+  {emoji:"🦨", name:"幽幽"},
+  {emoji:"🦘", name:"蹦蹦"},
+  {emoji:"🦙", name:"绒绒"},
+  {emoji:"🐫", name:"驼驼"},
+  {emoji:"🦒", name:"高高"},
+  {emoji:"🦓", name:"斑斑"},
+  {emoji:"🦌", name:"鹿鹿"},
+  {emoji:"🐘", name:"象象"},
+  {emoji:"🦏", name:"犀犀"},
+  {emoji:"🐪", name:"沙沙"}
+];
+let BUDDIES = BUDDIES_20;
 const PRAISE = ["太棒啦！","你真聪明！","厉害呀！","满分操作！","小脑袋瓜真灵！"];
 const ENCOURAGE = ["没关系，再想想～","差一点点哦～","慢一点，再数一遍～","看清符号，再来一次～"];
 const ROUND_SIZE = 10;
@@ -658,7 +807,8 @@ function canLight(){ return perfectSets > litBuddies.length; }
 
 function rnd(min, max){ return Math.floor(Math.random() * (max - min + 1)) + min; }
 
-function genQuestion(mode){
+function genQuestion(mode, range){
+  if(range === 50) return genQuestion50(mode);
   const isFill = mode === "fill" || (mode === "mix" && Math.random() < 0.3);
   const isAdd = mode === "add" || (isFill ? Math.random() < 0.5 : (mode === "mix" && Math.random() < 0.5));
   let a, b, res;
@@ -682,9 +832,37 @@ function genQuestion(mode){
   }
   if(isFill){
     const blank = Math.random() < 0.5 ? "first" : "second";
-    return { a, b, res, ans: blank === "first" ? a : b, isAdd, blank };
+    return { a, b, res, ans: blank === "first" ? a : b, isAdd, blank, range: 20 };
   }
-  return { a, b, res, ans: res, isAdd, blank: null };
+  return { a, b, res, ans: res, isAdd, blank: null, range: 20 };
+}
+
+function genQuestion50(mode){
+  const isFill = mode === "mix" && Math.random() < 0.3;
+  const isAdd = mode === "add" || (mode === "mix" && Math.random() < 0.5);
+  let a, b, res;
+  if(isAdd){
+    if(Math.random() < 0.5){
+      a = rnd(11, 41); b = rnd(2, 9);
+      while(a + b > 50){ a = rnd(11, 41); }
+    } else {
+      a = rnd(11, 39); b = rnd(11, 50 - a);
+    }
+    res = a + b;
+  } else {
+    if(Math.random() < 0.5){
+      a = rnd(11, 50); b = rnd(2, 9);
+      while(a - b < 1){ a = rnd(11, 50); }
+    } else {
+      a = rnd(21, 50); b = rnd(11, a - 1);
+    }
+    res = a - b;
+  }
+  if(isFill){
+    const blank = Math.random() < 0.5 ? "first" : "second";
+    return { a, b, res, ans: blank === "first" ? a : b, isAdd, blank, range: 50 };
+  }
+  return { a, b, res, ans: res, isAdd, blank: null, range: 50 };
 }
 
 function roundSummary(correct){
@@ -695,6 +873,7 @@ function roundSummary(correct){
 }
 
 function makeSteps(q){
+  if(q.range === 50) return makeSteps50(q);
   const { a, b, ans, isAdd } = q;
   if(isAdd){
     if(a + b >= 10){
@@ -722,6 +901,59 @@ function makeSteps(q){
   return [
     {t:"个位够减，不用借位。",hot:false},
     {t:ones+" − "+b+" = <b>？</b>，答案就是它哦。",hot:true}
+  ];
+}
+
+function makeSteps50(q){
+  const { a, b, ans, isAdd } = q;
+  const aOnes = a % 10, aTens = Math.floor(a / 10);
+  const bOnes = b % 10, bTens = Math.floor(b / 10);
+  if(isAdd){
+    if(b >= 10){
+      return [
+        {t:"十位加十位：<b>"+aTens*10+" + "+bTens*10+" = "+(aTens+bTens)*10+"</b>。",hot:false},
+        {t:"个位加个位：<b>"+aOnes+" + "+bOnes+" = "+(aOnes+bOnes)+"</b>。",hot:true},
+        {t:"合起来：<b>"+(aTens+bTens)*10+" + "+(aOnes+bOnes)+" = "+ans+"</b>。",hot:false}
+      ];
+    }
+    const need = (10 - aOnes) % 10;
+    if(aOnes + b >= 10){
+      const rest = b - need;
+      return [
+        {t:"看 <b>"+a+"</b>，离下一个整十还差 <b>"+need+"</b>。",hot:false},
+        {t:"把 "+b+" 拆成 <b>"+need+"</b> 和 <b>"+rest+"</b>。",hot:true},
+        {t:a+" + "+need+" = <b>"+(a+need)+"</b>，再 "+(a+need)+" + "+rest+" = <b>"+ans+"</b>。",hot:false}
+      ];
+    }
+    return [
+      {t:"个位 "+aOnes+" + "+b+" 没满 10，不用进位。",hot:false},
+      {t:a+" + "+b+" = <b>？</b>，直接加就好。",hot:true}
+    ];
+  }
+  if(b >= 10){
+    const afterTens = a - bTens * 10;
+    return [
+      {t:"先减整十：<b>"+a+" − "+bTens*10+" = "+afterTens+"</b>。",hot:true},
+      {t:"再减个位：<b>"+afterTens+" − "+bOnes+" = "+ans+"</b>。",hot:false}
+    ];
+  }
+  if(aOnes < b){
+    if(aOnes === 0){
+      return [
+        {t:"<b>"+a+"</b> 已经是整十数，直接减就好。",hot:false},
+        {t:a+" − "+b+" = <b>"+ans+"</b>，答案就是它！",hot:true}
+      ];
+    }
+    const need = aOnes, rest = b - need;
+    return [
+      {t:"先减到整十：<b>"+a+" − "+need+" = "+(a-need)+"</b>。",hot:false},
+      {t:"把 "+b+" 拆成 <b>"+need+"</b> 和 <b>"+rest+"</b>。",hot:true},
+      {t:(a-need)+" − "+rest+" = <b>"+ans+"</b>，答案就是它！",hot:false}
+    ];
+  }
+  return [
+    {t:"个位 "+aOnes+" 够减 "+b+"，不用退位。",hot:false},
+    {t:a+" − "+b+" = <b>？</b>，直接减就好。",hot:true}
   ];
 }
 
@@ -877,6 +1109,7 @@ function anOp(s){ return "<span class='tf-op'>" + s + "</span>"; }
 function anAns(v){ return "<span class='an-num'>" + v + "</span>"; }
 
 function animSteps(q){
+  if(q.range === 50) return animSteps50(q);
   const { a, b, ans, isAdd, blank } = q;
   const res = q.res;
   if(blank){
@@ -952,6 +1185,112 @@ function animSteps(q){
     {row: anRow(anBlocks(a,"a") + anOp("−") + anBlocks(b,"dim",b) + anOp("=") + anAns(ans)), cap: a + " − " + b + " = <b>" + ans + "</b>，所以答案是 " + ans, hot:true}
   ];
 }
+
+function animSteps50(q){
+  const { a, b, ans, isAdd } = q;
+  const aOnes = a % 10, aTens = Math.floor(a / 10);
+  const bOnes = b % 10, bTens = Math.floor(b / 10);
+  if(isAdd){
+    if(b >= 10){
+      return [
+        {row: anEq(a + " + " + b + " = ？"), cap: "两位数加两位数，十位和十位加、个位和个位加", hot:false},
+        {row: anEq(aTens*10 + " + " + bTens*10 + " = " + (aTens+bTens)*10), cap: "十位加十位：<b>" + aTens*10 + " + " + bTens*10 + " = " + (aTens+bTens)*10 + "</b>", hot:true},
+        {row: anEq(aOnes + " + " + bOnes + " = " + (aOnes+bOnes)), cap: "个位加个位：<b>" + aOnes + " + " + bOnes + " = " + (aOnes+bOnes) + "</b>", hot:true},
+        {row: anEq((aTens+bTens)*10 + " + " + (aOnes+bOnes) + " = " + ans, true), cap: "合起来就是 <b>" + ans + "</b>", hot:false}
+      ];
+    }
+    const need = (10 - aOnes) % 10;
+    if(aOnes + b >= 10){
+      const rest = b - need;
+      return [
+        {row: anEq(a + " + " + b + " = ？"), cap: "先看 <b>" + a + "</b>，离整十还差 <b>" + need + "</b>", hot:false},
+        {row: anEq(a + " + " + need + " = " + (a+need)), cap: "从 " + b + " 里拆出 <b>" + need + "</b>，凑成整十 <b>" + (a+need) + "</b>", hot:true},
+        {row: anEq(b + " 分成 " + need + " 和 " + rest), cap: "剩下的 <b>" + rest + "</b> 还要加上", hot:false},
+        {row: anEq((a+need) + " + " + rest + " = " + ans, true), cap: "所以答案是 <b>" + ans + "</b>", hot:false}
+      ];
+    }
+    return [
+      {row: anEq(a + " + " + b + " = ？"), cap: "个位 " + aOnes + " 加 " + b + " 没满 10", hot:false},
+      {row: anEq(a + " + " + b + " = " + ans, true), cap: "直接加，答案是 <b>" + ans + "</b>", hot:true}
+    ];
+  }
+  if(b >= 10){
+    const afterTens = a - bTens * 10;
+    return [
+      {row: anEq(a + " − " + b + " = ？"), cap: "两位数减两位数，先减整十、再减个位", hot:false},
+      {row: anEq(a + " − " + bTens*10 + " = " + afterTens), cap: "先减整十：<b>" + a + " − " + bTens*10 + " = " + afterTens + "</b>", hot:true},
+      {row: anEq(afterTens + " − " + bOnes + " = " + ans, true), cap: "再减个位：<b>" + afterTens + " − " + bOnes + " = " + ans + "</b>", hot:true}
+    ];
+  }
+  if(aOnes < b){
+    if(aOnes === 0){
+      return [
+        {row: anEq(a + " − " + b + " = ？"), cap: "<b>" + a + "</b> 已经是整十数，直接减", hot:false},
+        {row: anEq(a + " − " + b + " = " + ans, true), cap: "答案是 <b>" + ans + "</b>", hot:true}
+      ];
+    }
+    const need = aOnes, rest = b - need;
+    return [
+      {row: anEq(a + " − " + b + " = ？"), cap: "个位 " + aOnes + " 不够减 " + b + "，先减到整十", hot:false},
+      {row: anEq(a + " − " + need + " = " + (a-need)), cap: "先减 <b>" + need + "</b>：" + a + " − " + need + " = <b>" + (a-need) + "</b>", hot:true},
+      {row: anEq(b + " 分成 " + need + " 和 " + rest), cap: "把 " + b + " 分成 <b>" + need + "</b> 和 <b>" + rest + "</b>", hot:false},
+      {row: anEq((a-need) + " − " + rest + " = " + ans, true), cap: "再减 " + rest + "，答案是 <b>" + ans + "</b>", hot:false}
+    ];
+  }
+  return [
+    {row: anEq(a + " − " + b + " = ？"), cap: "个位 " + aOnes + " 够减 " + b + "，不用退位", hot:false},
+    {row: anEq(a + " − " + b + " = " + ans, true), cap: "直接减，答案是 <b>" + ans + "</b>", hot:true}
+  ];
+}
+
+const TEACH_CASES = [
+  {
+    tag: "进位加法",
+    title: "两位数 + 一位数，先凑整十",
+    q: "38 + 7 = ？",
+    steps: [
+      {txt:"先看 38，它离下一个整十 40 还差 <b>2</b>。", eq:""},
+      {txt:"把 7 拆成 <b>2</b> 和 <b>5</b>。", eq:"7 = 2 + 5"},
+      {txt:"38 先加上 2，凑成整十！", eq:"38 + 2 = 40"},
+      {txt:"再加上剩下的 5。", eq:"40 + 5 = 45"}
+    ],
+    tip: "口诀：<b>差几就拆几，先凑整十再加零头</b>。"
+  },
+  {
+    tag: "退位减法",
+    title: "两位数 − 一位数，先减到整十",
+    q: "45 − 8 = ？",
+    steps: [
+      {txt:"先看 45，个位是 5，减到整十只要减 <b>5</b>。", eq:""},
+      {txt:"把 8 拆成 <b>5</b> 和 <b>3</b>。", eq:"8 = 5 + 3"},
+      {txt:"45 先减去 5，减成整十！", eq:"45 − 5 = 40"},
+      {txt:"再减掉剩下的 3。", eq:"40 − 3 = 37"}
+    ],
+    tip: "口诀：<b>先减到整十，再减零头</b>。"
+  },
+  {
+    tag: "两位数 + 两位数",
+    title: "十位加十位，个位加个位",
+    q: "23 + 15 = ？",
+    steps: [
+      {txt:"十位和十位相加。", eq:"20 + 10 = 30"},
+      {txt:"个位和个位相加。", eq:"3 + 5 = 8"},
+      {txt:"把两部分合起来。", eq:"30 + 8 = 38"}
+    ],
+    tip: "口诀：<b>十位加十位，个位加个位</b>。"
+  },
+  {
+    tag: "两位数 − 两位数",
+    title: "先减整十，再减个位",
+    q: "47 − 26 = ？",
+    steps: [
+      {txt:"先减去整十的 20。", eq:"47 − 20 = 27"},
+      {txt:"再减去个位的 6。", eq:"27 − 6 = 21"},
+      {txt:"分两步减，轻松搞定！", eq:""}
+    ],
+    tip: "口诀：<b>先减整十，再减个位</b>。"
+  }
+];
 </script>
 
 <script id="dom-logic">
@@ -968,15 +1307,45 @@ let companionIdx = parseInt(localStorage.getItem(LS.companion) || "0", 10) || 0;
 if(companionIdx >= COMPANIONS.length) companionIdx = 0;
 let muted = localStorage.getItem(LS.muted) === "1";
 let mode = "mix";
+let rangeMode = 20;
 let q = null, answered = false;
 let lastPicked = 0;
 let qIndex = 0, roundCorrect = 0, roundRetried = 0, streak = 0;
 let roundLog = [];
 let roundQuestions = [];
 let setIndex = 0, totalCorrect = 0;
-let perfectSets = parseInt(localStorage.getItem(LS.perfect) || "0", 10) || 0;
-let litBuddies = JSON.parse(localStorage.getItem(LS.lit) || "[]");
-if(!Array.isArray(litBuddies)) litBuddies = [];
+let litMap, perfectMap;
+{
+  const rawLit = localStorage.getItem(LS.lit);
+  const rawPerfect = localStorage.getItem(LS.perfect);
+  if(rawLit && rawLit.startsWith("{")){
+    litMap = JSON.parse(rawLit);
+  } else {
+    litMap = {20: [], 50: []};
+    if(rawLit){ try { const old = JSON.parse(rawLit); if(Array.isArray(old)) litMap[20] = old; } catch(e){} }
+  }
+  if(rawPerfect && rawPerfect.startsWith("{")){
+    perfectMap = JSON.parse(rawPerfect);
+  } else {
+    perfectMap = {20: 0, 50: 0};
+    if(rawPerfect){ const old = parseInt(rawPerfect, 10) || 0; if(old) perfectMap[20] = old; }
+  }
+  if(!Array.isArray(litMap[20])) litMap[20] = [];
+  if(!Array.isArray(litMap[50])) litMap[50] = [];
+  if(typeof perfectMap[20] !== "number") perfectMap[20] = 0;
+  if(typeof perfectMap[50] !== "number") perfectMap[50] = 0;
+}
+let litBuddies = litMap[rangeMode];
+let perfectSets = perfectMap[rangeMode];
+function syncRange(){
+  BUDDIES = rangeMode === 50 ? BUDDIES_50 : BUDDIES_20;
+  litBuddies = litMap[rangeMode];
+  perfectSets = perfectMap[rangeMode];
+}
+function saveLitPerfect(){
+  localStorage.setItem(LS.lit, JSON.stringify(litMap));
+  localStorage.setItem(LS.perfect, JSON.stringify(perfectMap));
+}
 let targetBuddy = -1;
 let explained = false;
 let audioCtx = null;
@@ -994,11 +1363,12 @@ function restoreSnapshot(snap){
   if(!snap) return;
   litBuddies = Array.isArray(snap.litBuddies) ? [...snap.litBuddies] : [];
   perfectSets = snap.perfectSets || 0;
+  litMap[rangeMode] = litBuddies;
+  perfectMap[rangeMode] = perfectSets;
   companionIdx = snap.companionIdx || 0;
   if(companionIdx >= COMPANIONS.length) companionIdx = 0;
   totalCorrect = snap.totalCorrect || 0;
-  localStorage.setItem(LS.lit, JSON.stringify(litBuddies));
-  localStorage.setItem(LS.perfect, String(perfectSets));
+  saveLitPerfect();
   localStorage.setItem(LS.companion, String(companionIdx));
 }
 function saveHistory(entry){
@@ -1034,7 +1404,7 @@ function createSession(){
     roundCorrect: 0, roundRetried: 0, streak: 0,
     roundLog: [], questions: [],
     q: null, answered: false, explained: false, lastPicked: 0,
-    gotBuddy: false,
+    gotBuddy: false, rangeMode,
     snapshotStart: makeSnapshot(),
     ts: Date.now()
   });
@@ -1055,10 +1425,10 @@ function saveProgress(){
   if(!sessionId) return;
   updateHistory(sessionId, {
     setIndex, qIndex, totalCorrect, targetBuddy, companionIdx,
-    roundCorrect, roundRetried, streak,
+    roundCorrect, roundRetried, streak, rangeMode,
     roundLog: [...roundLog],
-    questions: roundQuestions.map(rq => ({a:rq.a,b:rq.b,res:rq.res,ans:rq.ans,isAdd:rq.isAdd,blank:rq.blank})),
-    q: q ? {a:q.a,b:q.b,res:q.res,ans:q.ans,isAdd:q.isAdd,blank:q.blank} : null,
+    questions: roundQuestions.map(rq => ({a:rq.a,b:rq.b,res:rq.res,ans:rq.ans,isAdd:rq.isAdd,blank:rq.blank,range:rq.range})),
+    q: q ? {a:q.a,b:q.b,res:q.res,ans:q.ans,isAdd:q.isAdd,blank:q.blank,range:q.range} : null,
     answered, explained, lastPicked,
     snapshot: makeSnapshot(),
     ts: Date.now()
@@ -1162,7 +1532,7 @@ function markDot(status){
 function nextQuestion(){
   answered = false;
   explained = false;
-  q = genQuestion(mode);
+  q = genQuestion(mode, rangeMode);
   roundQuestions.push(q);
   const input = $("answerInput");
   input.value = "";
@@ -1183,8 +1553,8 @@ function submitAnswer(){
     return;
   }
   const v = parseInt(raw, 10);
-  if(isNaN(v) || v < 0 || v > 20){
-    speak("要输入 0 到 20 的数字哦～", false);
+  if(isNaN(v) || v < 0 || v > rangeMode){
+    speak("要输入 0 到 " + rangeMode + " 的数字哦～", false);
     return;
   }
   answered = true;
@@ -1256,9 +1626,9 @@ function showSummary(){
   const gotBuddy = (roundCorrect === ROUND_SIZE && targetBuddy >= 0 && !isLit(targetBuddy));
   if(gotBuddy){
     litBuddies.push(targetBuddy);
-    localStorage.setItem(LS.lit, JSON.stringify(litBuddies));
     perfectSets++;
-    localStorage.setItem(LS.perfect, String(perfectSets));
+    perfectMap[rangeMode] = perfectSets;
+    saveLitPerfect();
   }
   if(setIndex >= TOTAL_SETS){
     $("mFace").textContent = "🏆";
@@ -1391,6 +1761,74 @@ function startRound(){
   nextQuestion();
 }
 
+let teachIdx = 0, teachStepTimer = null, teachResume = false;
+function renderTeach(){
+  const stage = $("teachStage");
+  stage.innerHTML = "";
+  TEACH_CASES.forEach((c, i) => {
+    const box = document.createElement("div");
+    box.className = "teach-case" + (i === 0 ? " on" : "");
+    let html = '<span class="teach-tag">' + c.tag + '</span>';
+    html += '<div class="teach-title">' + c.title + '</div>';
+    html += '<div class="teach-qwrap"><div class="teach-q">' + c.q + '</div></div>';
+    html += '<div class="teach-steps">';
+    c.steps.forEach((s, j) => {
+      html += '<div class="teach-step"><span class="no">' + (j + 1) + '</span>';
+      html += '<span class="txt">' + s.txt + '</span>';
+      if(s.eq) html += '<span class="eq">' + s.eq + '</span>';
+      html += '</div>';
+    });
+    html += '</div>';
+    html += '<div class="teach-tip">' + c.tip + '</div>';
+    box.innerHTML = html;
+    stage.appendChild(box);
+  });
+  const dots = $("teachDots");
+  dots.innerHTML = "";
+  TEACH_CASES.forEach(() => dots.appendChild(document.createElement("span")));
+}
+function playTeachCase(i){
+  const cases = $("teachStage").querySelectorAll(".teach-case");
+  cases.forEach((c, ci) => c.classList.toggle("on", ci === i));
+  const steps = cases[i].querySelectorAll(".teach-step");
+  steps.forEach(s => s.classList.remove("on"));
+  if(teachStepTimer){ clearInterval(teachStepTimer); teachStepTimer = null; }
+  let j = 0;
+  teachStepTimer = setInterval(() => {
+    if(j >= steps.length){ clearInterval(teachStepTimer); teachStepTimer = null; return; }
+    steps[j].classList.add("on");
+    j++;
+  }, 750);
+}
+function updateTeachUI(){
+  playTeachCase(teachIdx);
+  const dots = $("teachDots").children;
+  for(let i = 0; i < dots.length; i++){
+    dots[i].className = i === teachIdx ? "on" : (i < teachIdx ? "seen" : "");
+  }
+  $("teachNextBtn").textContent = teachIdx < TEACH_CASES.length - 1 ? "下一个 ▶️" : "开始练习 🚀";
+}
+function openTeach(resume){
+  teachResume = !!resume;
+  teachIdx = 0;
+  renderTeach();
+  updateTeachUI();
+  $("teachOverlay").classList.add("show");
+}
+function closeTeach(){
+  if(teachStepTimer){ clearInterval(teachStepTimer); teachStepTimer = null; }
+  $("teachOverlay").classList.remove("show");
+}
+function finishTeach(){
+  closeTeach();
+  if(!teachResume) beginPractice();
+}
+$("teachNextBtn").addEventListener("click", () => {
+  if(teachIdx < TEACH_CASES.length - 1){ teachIdx++; updateTeachUI(); }
+  else finishTeach();
+});
+$("teachSkipBtn").addEventListener("click", finishTeach);
+
 $("buddyBtn").addEventListener("click", () => {
   companionIdx = (companionIdx + 1) % COMPANIONS.length;
   localStorage.setItem(LS.companion, String(companionIdx));
@@ -1421,10 +1859,11 @@ $("startBtn").addEventListener("click", () => {
     const unlit = BUDDIES.map((b, i) => i).filter(i => !isLit(i));
     targetBuddy = unlit.length ? unlit[rnd(0, unlit.length - 1)] : -1;
   }
-  showScreen("game");
-  setIndex = 0; totalCorrect = 0;
-  needNewRecord = true;
-  startRound();
+  if(rangeMode === 50){
+    openTeach(false);
+  } else {
+    beginPractice();
+  }
 });
 $("learnBtn").addEventListener("click", () => {
   if(animTimer){ clearInterval(animTimer); animTimer = null; }
@@ -1449,16 +1888,27 @@ $("muteBtn").addEventListener("click", () => {
   localStorage.setItem(LS.muted, muted ? "1" : "0");
   renderHUD();
 });
-document.querySelectorAll(".chip").forEach(ch => {
-  ch.addEventListener("click", () => {
-    document.querySelectorAll(".chip").forEach(c => c.classList.remove("on"));
-    ch.classList.add("on");
-    mode = ch.dataset.mode;
-    setIndex = 0; totalCorrect = 0;
-    if(litBuddies.length < BUDDIES.length) showPickPanel();
-    else { targetBuddy = -1; startRound(); }
-  });
-});
+function beginPractice(){
+  showScreen("game");
+  setIndex = 0; totalCorrect = 0;
+  needNewRecord = true;
+  $("teachBtn").style.display = rangeMode === 50 ? "" : "none";
+  $("gameTitle").textContent = rangeMode + "以内加减法乐园";
+  startRound();
+}
+function switchRange(r){
+  if(r === rangeMode) return;
+  rangeMode = r;
+  syncRange();
+  $("tab20").classList.toggle("on", r === 20);
+  $("tab50").classList.toggle("on", r === 50);
+  $("coverSub").textContent = r + " 以内加减法 · 边玩边学";
+  renderCover();
+  renderHUD();
+}
+$("tab20").addEventListener("click", () => switchRange(20));
+$("tab50").addEventListener("click", () => switchRange(50));
+$("teachBtn").addEventListener("click", () => openTeach(true));
 $("againBtn").addEventListener("click", () => {
   const retry = $("againBtn").dataset.retry === "1";
   $("againBtn").dataset.retry = "";
@@ -1478,6 +1928,8 @@ $("resetBtn").addEventListener("click", () => {
 });
 
 function restoreProgress(p){
+  rangeMode = (p.rangeMode === 50 || (p.q && p.q.range === 50)) ? 50 : 20;
+  syncRange();
   restoreSnapshot(p.snapshot || p.snapshotStart);
   sessionId = p.id || null;
   currentRecordId = p.id || null;
@@ -1496,6 +1948,11 @@ function restoreProgress(p){
   lastPicked = p.lastPicked || 0;
   if(currentRecordId) localStorage.setItem(LS.progress, String(currentRecordId));
   showScreen("game");
+  $("tab20").classList.toggle("on", rangeMode === 20);
+  $("tab50").classList.toggle("on", rangeMode === 50);
+  $("coverSub").textContent = rangeMode + " 以内加减法 · 边玩边学";
+  $("teachBtn").style.display = rangeMode === 50 ? "" : "none";
+  $("gameTitle").textContent = rangeMode + "以内加减法乐园";
   $("setBar").textContent = "第 " + Math.min(setIndex, TOTAL_SETS) + " / " + TOTAL_SETS + " 套";
   if(targetBuddy >= 0){
     $("targetBar").textContent = "🎯 全对获得 " + BUDDIES[targetBuddy].emoji + BUDDIES[targetBuddy].name;
@@ -1590,11 +2047,15 @@ function renderRecords(){
         restoreProgress(h);
       } else if(type === "done"){
         closeRecord();
+        rangeMode = h.rangeMode || 20;
+        syncRange();
         restoreSnapshot(h.snapshotEnd || h.snapshotStart);
         totalCorrect = h.totalCorrect || 0;
         setIndex = (h.setIndex || 1) + 1;
         if(setIndex > TOTAL_SETS){ setIndex = 1; totalCorrect = 0; }
         needNewRecord = true;
+        $("teachBtn").style.display = rangeMode === 50 ? "" : "none";
+        $("gameTitle").textContent = rangeMode + "以内加减法乐园";
         if(litBuddies.length < BUDDIES.length) showPickPanel();
         else { targetBuddy = -1; showScreen("game"); startRound(); }
       }

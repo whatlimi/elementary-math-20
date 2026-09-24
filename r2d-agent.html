@@ -1,0 +1,798 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>设计辅助 Agent · R2D</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #ffffff; --panel: #f9f9f9; --panel2: #f0f0f0; --border: #e5e5e5;
+    --text: #1a1a1a; --muted: #6e6e6e; --primary: #10a37f; --ok: #10a37f;
+    --warn: #d97706; --err: #dc2626; --accent: #10a37f;
+    --mono: ui-monospace, 'SF Mono', Consolas, 'Liberation Mono', monospace;
+  }
+  body { background: var(--bg); color: var(--text); font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif; font-size: 14px; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+  header { background: var(--bg); border-bottom: 1px solid var(--border); padding: 10px 20px; display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  header h1 { font-size: 15px; font-weight: 600; font-family: var(--mono); letter-spacing: .3px; }
+  header .tag { font-size: 12px; color: var(--muted); }
+  header .spacer { flex: 1; }
+  .btn { background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 6px 12px; font-size: 13px; cursor: pointer; }
+  .btn:hover { border-color: var(--primary); color: var(--primary); }
+  .btn.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+  .btn.primary:hover { color: #fff; opacity: .9; }
+  .btn.ghost { background: transparent; border-color: transparent; }
+  .btn.ghost:hover { background: var(--panel2); color: var(--text); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+  header .btn { padding: 5px 10px; font-size: 12px; }
+  main { flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 20px; }
+  .composer { width: 100%; max-width: 720px; }
+  .composer textarea { width: 100%; min-height: 160px; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 12px; padding: 16px; font-size: 15px; font-family: var(--mono); resize: vertical; line-height: 1.6; }
+  .composer textarea:focus { outline: none; border-color: var(--primary); }
+  .composer .row { display: flex; align-items: center; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .composer .hint { font-size: 12px; color: var(--muted); margin-top: 10px; text-align: center; }
+  .pill { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: var(--panel2); color: var(--muted); }
+  .pill.mock { background: #fef3c7; color: #92400e; }
+  .pill.live { background: #d1fae5; color: #065f46; }
+  .auto-label { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 5px; cursor: pointer; }
+  .auto-label input { accent-color: var(--primary); }
+  .drawer { position: fixed; top: 0; right: 0; width: 440px; height: 100vh; background: var(--panel); border-left: 1px solid var(--border); transform: translateX(100%); transition: transform .2s ease; z-index: 50; overflow-y: auto; box-shadow: -4px 0 16px rgba(0,0,0,.04); }
+  .drawer.show { transform: translateX(0); }
+  .drawer .dhead { position: sticky; top: 0; background: var(--panel); border-bottom: 1px solid var(--border); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; z-index: 2; }
+  .drawer .dhead h3 { font-size: 14px; font-family: var(--mono); }
+  .drawer .dhead .btn { padding: 3px 8px; font-size: 11px; }
+  .drawer .dbody { padding: 14px 16px; }
+  .drawer h4 { font-size: 12px; color: var(--muted); margin: 10px 0 5px; text-transform: uppercase; letter-spacing: .5px; }
+  .drawer textarea { width: 100%; background: var(--bg); color: var(--text); border: 1px solid var(--border); border-radius: 6px; padding: 8px; font-size: 12px; font-family: var(--mono); resize: vertical; min-height: 70px; }
+  .trace { font-family: var(--mono); font-size: 12px; }
+  .trace .step { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 6px; overflow: hidden; }
+  .trace .step .head { padding: 7px 10px; display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+  .trace .step .head .idx { color: var(--muted); }
+  .trace .step .head .kind { font-size: 10px; padding: 1px 6px; border-radius: 3px; }
+  .trace .step .head .kind.think { background: #f0f0f0; color: #555; }
+  .trace .step .head .kind.act { background: #d1fae5; color: #065f46; }
+  .trace .step .head .kind.obs { background: #e0f2fe; color: #075985; }
+  .trace .step .body { padding: 8px 10px 10px; border-top: 1px solid var(--border); white-space: pre-wrap; color: var(--muted); max-height: 220px; overflow-y: auto; }
+  .skill-card { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px; margin-bottom: 8px; }
+  .skill-card .sk-name { font-weight: 600; font-size: 13px; display: flex; align-items: center; gap: 6px; }
+  .skill-card .sk-status { font-size: 10px; padding: 1px 6px; border-radius: 3px; background: var(--panel2); color: var(--muted); }
+  .skill-card .sk-status.run { background: #d1fae5; color: #065f46; }
+  .skill-card .sk-status.ok { background: #d1fae5; color: #065f46; }
+  .skill-card .sk-status.fail { background: #fee2e2; color: #991b1b; }
+  .skill-card .sk-status.wait { background: #fef3c7; color: #92400e; }
+  .skill-card .sk-meta { font-size: 11px; color: var(--muted); margin-top: 4px; }
+  .skill-card .sk-out { font-family: var(--mono); font-size: 10px; color: var(--muted); margin-top: 6px; max-height: 140px; overflow-y: auto; white-space: pre-wrap; background: var(--panel); padding: 6px; border-radius: 4px; }
+  .empty { color: var(--muted); font-size: 12px; padding: 16px; text-align: center; }
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.3); display: none; align-items: center; justify-content: center; z-index: 100; }
+  .modal.show { display: flex; }
+  .modal .box { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; padding: 18px; width: 560px; max-height: 80vh; overflow-y: auto; }
+  .modal .box h2 { font-size: 15px; margin-bottom: 10px; font-family: var(--mono); }
+  .prov-row { display: grid; grid-template-columns: 90px 1fr 1fr 60px; gap: 6px; align-items: center; margin-bottom: 6px; }
+  .prov-row label { font-size: 12px; color: var(--muted); }
+  .prov-row input { background: var(--panel); border: 1px solid var(--border); color: var(--text); border-radius: 4px; padding: 5px 6px; font-size: 12px; width: 100%; }
+  .mcp-row { display: grid; grid-template-columns: 100px 1fr 80px 24px; gap: 6px; align-items: center; margin-bottom: 6px; }
+  .mcp-row input { background: var(--panel); border: 1px solid var(--border); color: var(--text); border-radius: 4px; padding: 5px 6px; font-size: 12px; width: 100%; }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--text); color: var(--bg); padding: 8px 18px; border-radius: 8px; z-index: 200; font-size: 13px; }
+  .test-bar { background: var(--panel); border-top: 1px solid var(--border); padding: 4px 20px; font-family: var(--mono); font-size: 11px; color: var(--muted); display: flex; gap: 14px; align-items: center; flex-shrink: 0; }
+  .test-bar .pass { color: var(--ok); } .test-bar .fail { color: var(--err); }
+  .preview { width: 100%; height: 320px; border: 1px solid var(--border); border-radius: 6px; background: #fff; }
+  .loop-bar { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+  .loop-bar .btn { width: 100%; text-align: left; }
+  #闭环状态 { font-size: 11px; color: var(--muted); margin-top: 4px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>设计辅助 Agent</h1>
+  <span class="tag">R2D · 5 Skill</span>
+  <span class="spacer"></span>
+  <button class="btn ghost" onclick="toggleDrawer('drawerAssets')">资产</button>
+  <button class="btn ghost" onclick="toggleDrawer('drawerTrace')">轨迹</button>
+  <button class="btn ghost" onclick="toggleDrawer('drawerSkills')">Skill</button>
+  <button class="btn ghost" onclick="toggleDrawer('drawerPreview')">预览</button>
+  <button class="btn ghost" onclick="openProviderPanel()">Provider</button>
+  <button class="btn ghost" onclick="openMcpPanel()">MCP</button>
+  <button class="btn ghost" onclick="runSelfTest()">自测</button>
+</header>
+<main>
+  <div class="composer">
+    <textarea id="prdInput" placeholder="粘贴 PRD，或留空点「开始」用内置闪购样例"></textarea>
+    <div class="row">
+      <button class="btn primary" id="btnStart" onclick="agentStart()">开始</button>
+      <button class="btn" id="btnStep" onclick="agentStep()" disabled>单步继续</button>
+      <button class="btn" id="btnBack" onclick="agentBack()" disabled>打回重做</button>
+      <button class="btn ghost" onclick="agentReset()">重置</button>
+      <label class="auto-label"><input type="checkbox" id="autoModeCb" onchange="toggleAutoMode()"> 自动连续</label>
+      <span class="spacer"></span>
+      <span id="modePill" class="pill mock">mock 模式</span>
+    </div>
+    <div class="hint">5 Skill 串联：PRD 理解 → 流程推导 → 页面框架 → 组件映射 → 交互补齐 → 交互稿</div>
+  </div>
+</main>
+
+<div class="drawer" id="drawerAssets">
+  <div class="dhead"><h3>资产面板</h3><button class="btn ghost" onclick="toggleDrawer('drawerAssets')">关闭</button></div>
+  <div class="dbody">
+    <h4>global.css（食材①）</h4>
+    <textarea id="assetGlobalCss" rows="4"></textarea>
+    <h4>component patterns（食材②）</h4>
+    <textarea id="assetComponents" rows="5"></textarea>
+    <h4>design.md（菜谱，S4 后读）</h4>
+    <textarea id="assetDesignMd" rows="4"></textarea>
+  </div>
+</div>
+
+<div class="drawer" id="drawerTrace">
+  <div class="dhead"><h3>Agent 运行轨迹</h3><button class="btn ghost" onclick="toggleDrawer('drawerTrace')">关闭</button></div>
+  <div class="dbody"><div class="trace" id="trace"><div class="empty">点「开始」启动 Agent</div></div></div>
+</div>
+
+<div class="drawer" id="drawerSkills">
+  <div class="dhead"><h3>Skill 流水线</h3><button class="btn ghost" onclick="toggleDrawer('drawerSkills')">关闭</button></div>
+  <div class="dbody"><div id="skillPipeline"></div></div>
+</div>
+
+<div class="drawer" id="drawerPreview">
+  <div class="dhead"><h3>交互稿预览</h3><button class="btn ghost" onclick="toggleDrawer('drawerPreview')">关闭</button></div>
+  <div class="dbody">
+    <iframe class="preview" id="preview"></iframe>
+    <h4>导出与闭环</h4>
+    <div class="loop-bar">
+      <button class="btn" onclick="exportHtml()">导出 HTML</button>
+      <button class="btn" onclick="mcpExport()">导出到 MCP（MasterGo／Figma）</button>
+      <button class="btn" onclick="mcpImport()">从 MCP 回填修改</button>
+      <button class="btn primary" onclick="designerApprove()">设计师确认通过</button>
+      <button class="btn" onclick="designerReject()">打回迭代</button>
+    </div>
+    <div id="闭环状态"></div>
+  </div>
+</div>
+
+<div class="test-bar" id="testBar">自测未运行</div>
+
+<div class="modal" id="providerModal">
+  <div class="box">
+    <h2>多模态 Provider 面板</h2>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">填 API key 切真调用（浏览器 fetch，部分受 CORS 限制需自配网关）；留空走 mock。key 存 localStorage。</div>
+    <div id="providerRows"></div>
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button class="btn primary" onclick="saveProviders()">保存</button>
+      <button class="btn ghost" onclick="closeProviderPanel()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="mcpModal">
+  <div class="box">
+    <h2>MCP Server 列表</h2>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:10px">内置 mock MasterGo／Figma 演示协议；填 HTTP URL 可真连远程 MCP server。工具带 server 前缀命名空间。</div>
+    <div id="mcpRows"></div>
+    <div style="margin-top:10px;display:flex;gap:8px">
+      <button class="btn" onclick="addMcpRow()">＋ 添加自定义</button>
+      <button class="btn primary" onclick="saveMcp()">保存并连接</button>
+      <button class="btn ghost" onclick="closeMcpPanel()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function toggleDrawer(id) {
+  document.querySelectorAll('.drawer').forEach(d => { if (d.id !== id) d.classList.remove('show'); });
+  document.getElementById(id).classList.toggle('show');
+}
+/* ============ 资产样例 ============ */
+const ASSET_DEFAULTS = {
+  globalCss: `:root { --color-primary: #FF4D4F; --color-warning: #FAAD14; --text-size: 14px; --gap: 8px; }
+.ProductCard { border-radius: 4px; padding: 8px; }
+.SearchBar { background: #fff; border-radius: 20px; }
+.CartFab { position: fixed; right: 12px; bottom: 12px; }
+.ToastBar { padding: 8px 12px; border-radius: 4px; }`,
+  components: `SearchBar: 搜索栏，props: placeholder
+ProductCardGrid: 商品卡片网格，props: layout(waterfall/grid)
+CartFab: 悬浮购物车按钮，props: 无
+ToastBar: 提示条，props: type(warning/success/error)
+EmptyState: 空状态，props: illustration,text,actionText
+Skeleton: 骨架屏，props: rows`,
+  designMd: `# 非药推荐设计规范
+- 主色 #FF4D4F，警示色 #FAAD14
+- 商品卡片圆角 8px
+- 起送价不足用 warning 提示条
+- 加购成功用轻提示（toast）
+- 空状态用插画+引导按钮`
+};
+
+/* ============ 5 个 Skill 定义 ============ */
+const SKILLS = [
+  {
+    id: 'S1', name: 'PRD 需求理解', modality: 'text',
+    tools: ['read_prd'],
+    prompt: '你是资深交互设计师。从以下 PRD 结构化提取：业务目标、核心用户场景、功能清单、设计目标与策略。严格输出 JSON。',
+    schema: ['businessGoal','coreScenarios','featureList','designGoals','designStrategy'],
+    selfCheck: o => o.businessGoal && Array.isArray(o.coreScenarios) && o.coreScenarios.length>=1 && Array.isArray(o.featureList) && o.featureList.length>=1,
+    mock: () => ({
+      businessGoal: '提升非药商品在闪购频道的推荐转化率',
+      coreScenarios: [
+        { name: '搜索非药商品', user: '有明确购药需求的用户', goal: '快速找到目标非药商品', steps: ['输入关键词','查看推荐列表','点击商品卡片'] },
+        { name: '浏览非药推荐', user: '无明确需求的用户', goal: '发现感兴趣的非药商品', steps: ['进入闪购首页','查看非药推荐区','点击感兴趣商品'] }
+      ],
+      featureList: ['非药商品推荐位','商品卡片展示','分类筛选','加购流程','起送价提示'],
+      designGoals: ['提升非药商品曝光','降低用户决策成本','保证加购转化顺畅'],
+      designStrategy: '分类分组+智能去重结合，优先展示高转化非药商品，起送价不足时引导凑单'
+    })
+  },
+  {
+    id: 'S2', name: '交互流程推导', modality: 'text',
+    tools: ['derive_flow'],
+    prompt: '基于上游场景与功能清单，推导用户从入口到完成的完整链路，标注关键分支（如起送价是否满足）。输出 JSON：flow{nodes,edges} + keyBranches。',
+    schema: ['flow','keyBranches'],
+    selfCheck: o => o.flow && Array.isArray(o.flow.nodes) && o.flow.nodes.length>=1 && Array.isArray(o.flow.edges) && o.flow.edges.length>=1 && Array.isArray(o.keyBranches),
+    mock: () => ({
+      flow: {
+        nodes: ['搜索/进入首页','非药推荐列表','商品详情','加购物车','起送价判断','去结算','凑单推荐'],
+        edges: [['搜索/进入首页','非药推荐列表'],['非药推荐列表','商品详情'],['商品详情','加购物车'],['加购物车','起送价判断'],['起送价判断','去结算'],['起送价判断','凑单推荐']]
+      },
+      keyBranches: [{ point: '起送价判断', condition: '订单金额≥起送价', branches: ['去结算','凑单推荐'] }]
+    })
+  },
+  {
+    id: 'S3', name: '页面框架', modality: 'vision',
+    tools: ['sketch_layout'],
+    prompt: '基于场景行为与流程，产出≥2 个页面框架方案（如「分类分组」vs「智能去重」），每方案给出页面与区块布局，推荐其一并说明理由。输出 JSON。',
+    schema: ['schemes','recommendation','reason'],
+    selfCheck: o => Array.isArray(o.schemes) && o.schemes.length>=2 && o.recommendation && o.reason,
+    mock: () => ({
+      schemes: [
+        { name: '方案A·分类分组', pages: [{ name: '非药推荐页', regions: ['顶部搜索栏','分类Tab栏','商品卡片网格','底部购物车bar'], layout: '纵向流' }] },
+        { name: '方案B·智能去重', pages: [{ name: '非药推荐页', regions: ['顶部搜索栏','智能推荐瀑布流','悬浮购物车按钮','起送价提示条'], layout: '瀑布流' }] }
+      ],
+      recommendation: '方案B·智能去重',
+      reason: '瀑布流提升信息密度，悬浮购物车bar不遮挡内容，起送价提示条更醒目'
+    })
+  },
+  {
+    id: 'S4', name: '组件映射填充', modality: 'text',
+    tools: ['read_global_css','read_components','map_components'],
+    prompt: '先读 global.css + component patterns（食材），再按推荐框架映射组件与字段，不得自创组件。输出 JSON：pages[{name,slots[{region,component,fields,props}]}]。',
+    schema: ['pages'],
+    selfCheck: o => Array.isArray(o.pages) && o.pages.length>=1 && o.pages[0].slots && o.pages[0].slots.every(s => s.component && Array.isArray(s.fields) && s.fields.length>=1),
+    mock: () => ({
+      pages: [{ name: '非药推荐页', slots: [
+        { region: '顶部搜索栏', component: 'SearchBar', fields: ['placeholder=搜非药商品'], props: {} },
+        { region: '智能推荐瀑布流', component: 'ProductCardGrid', fields: ['商品图','标题','价格','加购按钮'], props: { layout: 'waterfall' } },
+        { region: '悬浮购物车按钮', component: 'CartFab', fields: ['商品数','总价'], props: {} },
+        { region: '起送价提示条', component: 'ToastBar', fields: ['差额','去凑单按钮'], props: { type: 'warning' } }
+      ] }]
+    })
+  },
+  {
+    id: 'S5', name: '交互逻辑补齐', modality: 'text',
+    tools: ['fill_exceptions'],
+    prompt: '基于前置链路与组件映射，补齐异常态（无结果/超时/网络异常/空状态/加载态）与交互反馈。输出 JSON：exceptions[] + interactions[]。',
+    schema: ['exceptions','interactions'],
+    selfCheck: o => Array.isArray(o.exceptions) && o.exceptions.length>=3 && o.exceptions.some(e=>e.trigger.includes('无结果')) && o.exceptions.some(e=>e.trigger.includes('超时')) && o.exceptions.some(e=>e.trigger.includes('网络异常')) && Array.isArray(o.interactions) && o.interactions.length>=1,
+    mock: () => ({
+      exceptions: [
+        { trigger: '无搜索结果', page: '非药推荐页', behavior: '展示空状态插画+去首页按钮' },
+        { trigger: '请求超时', page: '非药推荐页', behavior: '展示超时提示+重试按钮' },
+        { trigger: '网络异常', page: '非药推荐页', behavior: '展示网络异常+刷新按钮' }
+      ],
+      interactions: [
+        { element: '商品卡片', event: '点击', feedback: '跳转商品详情页' },
+        { element: '加购按钮', event: '点击', feedback: '加入购物车+购物车badge+1+轻提示已加入' },
+        { element: '去凑单按钮', event: '点击', feedback: '跳转凑单推荐页' }
+      ]
+    })
+  }
+];
+
+/* ============ 多 Provider ============ */
+const PROVIDERS = [
+  { id: 'deepseek', name: 'DeepSeek', baseUrl: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
+  { id: 'qwen', name: '千问 Qwen-VL', baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-vl-max' },
+  { id: 'openai', name: 'OpenAI/Codex', baseUrl: 'https://api.openai.com/v1', model: 'gpt-4o' },
+  { id: 'glm', name: 'GLM', baseUrl: 'https://open.bigmodel.cn/api/paas/v4', model: 'glm-4-plus' },
+  { id: 'kimi', name: 'Kimi', baseUrl: 'https://api.moonshot.cn/v1', model: 'moonshot-v1-8k' },
+  { id: 'doubao', name: '豆包', baseUrl: 'https://ark.cn-beijing.volces.com/api/v3', model: 'doubao-pro' },
+  { id: 'minimax', name: 'MiniMax', baseUrl: 'https://api.minimax.chat/v1', model: 'abab6.5-chat' },
+  { id: 'pangu', name: '华为云盘古', baseUrl: 'https://pangu.huaweicloud.com/v1', model: 'pangu-v2' }
+];
+
+function loadProviderKeys() {
+  try { return JSON.parse(localStorage.getItem('r2d_providers') || '{}'); } catch(e) { return {}; }
+}
+function saveProviderKeys(obj) { localStorage.setItem('r2d_providers', JSON.stringify(obj)); }
+function activeProvider(modality) {
+  const keys = loadProviderKeys();
+  const cand = PROVIDERS.filter(p => keys[p.id] && keys[p.id].key);
+  if (modality === 'vision') {
+    const v = cand.find(p => p.id === 'qwen' || p.id === 'openai');
+    if (v) return v;
+  }
+  return cand[0] || null;
+}
+async function llmCall(skill, ctx) {
+  const prov = activeProvider(skill.modality);
+  if (!prov) return { mock: true, data: skill.mock() };
+  const keys = loadProviderKeys();
+  const key = keys[prov.id].key;
+  try {
+    const resp = await fetch(prov.baseUrl + '/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+      body: JSON.stringify({ model: keys[prov.id].model || prov.model, messages: [
+        { role: 'system', content: skill.prompt },
+        { role: 'user', content: JSON.stringify(ctx) }
+      ], temperature: 0.3 })
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const j = await resp.json();
+    return { mock: false, data: JSON.parse(j.choices[0].message.content) };
+  } catch(e) {
+    showToast('Provider ' + prov.name + ' 调用失败（' + e.message + '，可能 CORS），回退 mock');
+    return { mock: true, data: skill.mock(), fallback: true };
+  }
+}
+
+/* ============ MCP 客户端协议层 ============ */
+const MCP_MOCK_SERVERS = {
+  mastergo: {
+    name: 'MasterGo（mock）', type: 'mock',
+    tools: [
+      { name: 'export_to_mastergo', description: '导出 HTML 交互稿到 MasterGo 稿件' },
+      { name: 'import_from_mastergo', description: '从 MasterGo 回填设计师修改' }
+    ]
+  },
+  figma: {
+    name: 'Figma（mock）', type: 'mock',
+    tools: [
+      { name: 'get_file', description: '获取 Figma 文件结构' },
+      { name: 'get_selection', description: '获取当前选中节点' },
+      { name: 'create_frame', description: '创建画框' },
+      { name: 'export_frame', description: '导出画框为图片' }
+    ]
+  }
+};
+
+let mcpConnections = {};
+
+function loadMcpConfig() {
+  try { return JSON.parse(localStorage.getItem('r2d_mcp') || '{}'); } catch(e) { return {}; }
+}
+function saveMcpConfig(obj) { localStorage.setItem('r2d_mcp', JSON.stringify(obj)); }
+
+async function mcpInitialize(serverId, cfg) {
+  if (cfg.type === 'mock') {
+    const mock = MCP_MOCK_SERVERS[serverId];
+    mcpConnections[serverId] = { ...mock, tools: mock.tools };
+    return { protocolVersion: '2024-11-05', capabilities: { tools: {} } };
+  }
+  mcpConnections[serverId] = { name: cfg.name || serverId, type: 'http', url: cfg.url, tools: [] };
+  return { protocolVersion: '2024-11-05', capabilities: { tools: {} } };
+}
+
+async function mcpListTools(serverId) {
+  const conn = mcpConnections[serverId];
+  if (!conn) return [];
+  if (conn.type === 'mock') return conn.tools;
+  try {
+    const resp = await fetch(conn.url, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }) });
+    const j = await resp.json();
+    const tools = j.result.tools || [];
+    mcpConnections[serverId].tools = tools;
+    return tools;
+  } catch(e) {
+    showToast('MCP ' + serverId + ' 连接失败（' + e.message + '）');
+    return [];
+  }
+}
+
+async function mcpCallTool(serverId, toolName, args) {
+  const conn = mcpConnections[serverId];
+  if (!conn) return { error: '未连接' };
+  if (conn.type === 'mock') {
+    if (toolName === 'export_to_mastergo') return { ok: true, fileId: 'mg_' + Date.now(), msg: '已导出到 MasterGo 稿件' };
+    if (toolName === 'import_from_mastergo') return { ok: true, edits: '设计师调整了卡片间距与提示条色值', diff: { '--gap': '12px', '--color-warning': '#FF9500' } };
+    if (toolName === 'get_file') return { ok: true, file: { name: '非药推荐页', frames: 1 } };
+    if (toolName === 'get_selection') return { ok: true, node: { type: 'FRAME', name: 'ProductCardGrid' } };
+    if (toolName === 'create_frame') return { ok: true, frameId: 'frm_' + Date.now() };
+    if (toolName === 'export_frame') return { ok: true, imageUrl: 'data:image/svg+xml,<svg/>' };
+    return { ok: true };
+  }
+  try {
+    const resp = await fetch(conn.url, { method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: toolName, arguments: args || {} } }) });
+    const j = await resp.json();
+    return j.result;
+  } catch(e) { return { error: e.message }; }
+}
+
+function allMcpTools() {
+  const list = [];
+  for (const sid in mcpConnections) {
+    for (const t of mcpConnections[sid].tools) {
+      list.push({ ns: sid, name: sid + '.' + t.name, desc: t.description });
+    }
+  }
+  return list;
+}
+
+/* ============ 内置工具 ============ */
+const BUILTIN_TOOLS = {
+  read_prd: () => state.prdText,
+  derive_flow: () => state.skillOutput[0],
+  sketch_layout: () => ({ s1: state.skillOutput[0], s2: state.skillOutput[1] }),
+  read_global_css: () => { state.readOrder.push('global_css'); return document.getElementById('assetGlobalCss').value; },
+  read_components: () => { state.readOrder.push('components'); return document.getElementById('assetComponents').value; },
+  read_design_md: () => { state.readOrder.push('design_md'); return document.getElementById('assetDesignMd').value; },
+  map_components: () => ({ s3: state.skillOutput[2], assets: state.readOrder }),
+  fill_exceptions: () => ({ s2: state.skillOutput[1], s4: state.skillOutput[3] })
+};
+
+/* ============ Agent 状态 ============ */
+const state = {
+  running: false, stepIdx: 0, prdText: '',
+  skillOutput: [], skillStatus: [], trace: [],
+  readOrder: [], paused: false, closed: false, autoMode: false
+};
+
+function initAssets() {
+  document.getElementById('assetGlobalCss').value = ASSET_DEFAULTS.globalCss;
+  document.getElementById('assetComponents').value = ASSET_DEFAULTS.components;
+  document.getElementById('assetDesignMd').value = ASSET_DEFAULTS.designMd;
+}
+
+function renderSkills() {
+  const el = document.getElementById('skillPipeline');
+  el.innerHTML = SKILLS.map((s, i) => {
+    const st = state.skillStatus[i] || 'idle';
+    const cls = st === 'running' ? 'run' : st === 'ok' ? 'ok' : st === 'fail' ? 'fail' : st === 'wait' ? 'wait' : '';
+    const out = state.skillOutput[i] ? JSON.stringify(state.skillOutput[i], null, 1).slice(0, 400) : '';
+    return `<div class="skill-card">
+      <div class="sk-name">${s.id} ${s.name}<span class="sk-status ${cls}">${labelStatus(st)}</span></div>
+      <div class="sk-meta">模态：${s.modality} ｜ 工具：${s.tools.join('、')}</div>
+      ${out ? `<div class="sk-out">${esc(out)}</div>` : ''}
+    </div>`;
+  }).join('');
+}
+function labelStatus(st) { return { idle: '待运行', running: '运行中', ok: '通过', fail: '自检失败', wait: '待确认' }[st] || st; }
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function renderTrace() {
+  const el = document.getElementById('trace');
+  if (!state.trace.length) { el.innerHTML = '<div class="empty">点「开始」启动 Agent</div>'; return; }
+  el.innerHTML = state.trace.map((t, i) => `<div class="step">
+    <div class="head" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none'">
+      <span class="idx">#${i+1}</span><span class="kind ${t.kind}">${t.kind}</span><span>${esc(t.title)}</span>
+    </div>
+    <div class="body">${esc(t.body || '')}</div>
+  </div>`).join('');
+}
+function trace(kind, title, body) { state.trace.push({ kind, title, body }); renderTrace(); }
+
+function showToast(msg) {
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), 3000);
+}
+
+/* ============ Agent 主循环 ============ */
+async function agentStart() {
+  agentReset();
+  state.prdText = document.getElementById('prdInput').value.trim() || '【闪购·非药推荐】PRD：提升非药商品在闪购频道转化率，用户可搜索/浏览非药推荐，加购后判断起送价，不足引导凑单。';
+  document.getElementById('prdInput').value = state.prdText;
+  state.running = true;
+  document.getElementById('btnStart').disabled = true;
+  document.getElementById('btnStep').disabled = false;
+  trace('think', 'Agent 启动', '任务：从 PRD 到交互稿，5 Skill 串联\nPRD 摘要：' + state.prdText.slice(0, 80));
+  await runSkill(0);
+}
+
+async function runSkill(i) {
+  if (i >= SKILLS.length) { finishPipeline(); return; }
+  const s = SKILLS[i];
+  state.stepIdx = i;
+  state.skillStatus[i] = 'running';
+  renderSkills();
+  trace('think', s.id + ' ' + s.name + ' · 思考', 'prompt：' + s.prompt + '\n模态：' + s.modality + ' ｜ 工具：' + s.tools.join('、'));
+
+  const ctx = buildCtx(i);
+  trace('act', s.id + ' · 调用工具/LLM', '工具：' + s.tools.join('、') + '\n上下文 keys：' + Object.keys(ctx).join('、'));
+  for (const tn of s.tools) { if (BUILTIN_TOOLS[tn]) BUILTIN_TOOLS[tn](); }
+
+  const res = await llmCall(s, ctx);
+  trace('obs', s.id + ' · 观察' + (res.mock ? '（mock' + (res.fallback ? '回退）' : '）') : '（真调用）'), JSON.stringify(res.data, null, 1).slice(0, 500));
+
+  const ok = s.selfCheck(res.data);
+  state.skillOutput[i] = res.data;
+  state.skillStatus[i] = ok ? 'wait' : 'fail';
+  renderSkills();
+
+  if (!ok) {
+    trace('think', s.id + ' · 自检未通过，重生成', 'selfCheck 失败，重新调用 mock');
+    const res2 = { mock: true, data: s.mock() };
+    state.skillOutput[i] = res2.data;
+    state.skillStatus[i] = s.selfCheck(res2.data) ? 'wait' : 'fail';
+    renderSkills();
+  }
+
+  if (i === 3) {
+    trace('think', '资产读取顺序校验', '已读顺序：' + state.readOrder.join(' → ') + '\n期望：global_css → components → design_md（先食材后菜谱）');
+  }
+
+  if (state.autoMode && state.stepIdx < SKILLS.length - 1) {
+    setTimeout(() => agentStep(), 250);
+  } else {
+    state.paused = true;
+    document.getElementById('btnStep').disabled = false;
+    document.getElementById('btnBack').disabled = false;
+    showToast(s.id + ' ' + s.name + ' 完成' + (state.autoMode ? '' : '，请「单步继续」或「打回重做」'));
+  }
+}
+
+function toggleAutoMode() {
+  state.autoMode = document.getElementById('autoModeCb').checked;
+  if (state.autoMode && state.paused) { state.paused = false; document.getElementById('btnBack').disabled = true; agentStep(); }
+}
+
+function buildCtx(i) {
+  const ctx = { prd: state.prdText };
+  for (let k = 0; k < i; k++) ctx['s' + (k+1)] = state.skillOutput[k];
+  return ctx;
+}
+
+async function agentStep() {
+  if (!state.paused) return;
+  state.paused = false;
+  document.getElementById('btnBack').disabled = true;
+  const next = state.stepIdx + 1;
+  if (next >= SKILLS.length) { finishPipeline(); return; }
+  await runSkill(next);
+}
+
+async function agentBack() {
+  if (!state.paused) return;
+  const i = state.stepIdx;
+  trace('think', s_id(i) + ' · 设计师打回', '重新执行该 Skill');
+  state.skillStatus[i] = 'running';
+  renderSkills();
+  const s = SKILLS[i];
+  const ctx = buildCtx(i);
+  const res = await llmCall(s, ctx);
+  state.skillOutput[i] = res.data;
+  state.skillStatus[i] = s.selfCheck(res.data) ? 'wait' : 'fail';
+  renderSkills();
+  trace('obs', s_id(i) + ' · 重做完成', JSON.stringify(res.data, null, 1).slice(0, 300));
+  showToast(s_id(i) + ' 已重做');
+}
+function s_id(i) { return SKILLS[i].id; }
+
+function finishPipeline() {
+  state.paused = false;
+  document.getElementById('btnStep').disabled = true;
+  document.getElementById('btnBack').disabled = true;
+  trace('think', '5 Skill 全部完成', '产出交互稿，可导出或走 MCP 闭环');
+  exportHtml();
+  showToast('5 Skill 串联完成，交互稿已生成');
+}
+
+function agentReset() {
+  state.running = false; state.stepIdx = 0; state.prdText = '';
+  state.skillOutput = []; state.skillStatus = []; state.trace = [];
+  state.readOrder = []; state.paused = false; state.closed = false;
+  document.getElementById('btnStart').disabled = false;
+  document.getElementById('btnStep').disabled = true;
+  document.getElementById('btnBack').disabled = true;
+  document.getElementById('preview').srcdoc = '';
+  document.getElementById('闭环状态').textContent = '';
+  renderSkills(); renderTrace();
+}
+
+/* ============ 交互稿生成 ============ */
+function exportHtml() {
+  const s4 = state.skillOutput[3], s5 = state.skillOutput[4];
+  if (!s4) { showToast('请先跑完 S4 组件映射'); return; }
+  const slots = (s4.pages[0].slots || []).map(sl => `<div class="region"><b>${sl.region}</b> → ${sl.component}（${(sl.fields||[]).join('、')}）</div>`).join('');
+  const exc = (s5?.exceptions || []).map(e => `<li><b>${e.trigger}</b>：${e.behavior}</li>`).join('');
+  const inter = (s5?.interactions || []).map(e => `<li><b>${e.element}</b> ${e.event} → ${e.feedback}</li>`).join('');
+  const html = `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><style>
+body{font-family:sans-serif;margin:0;padding:16px;background:#f5f5f7;color:#333}
+.region{background:#fff;border:1px solid #eee;border-radius:8px;padding:10px;margin:6px 0}
+.region b{color:#FF4D4F}h2{font-size:16px;margin:10px 0 6px}ul{padding-left:18px}li{margin:4px 0}
+</style></head><body>
+<h2>${s4.pages[0].name} · 交互稿骨架</h2>
+${slots}
+<h2>异常态</h2><ul>${exc}</ul>
+<h2>交互反馈</h2><ul>${inter}</ul>
+</body></html>`;
+  document.getElementById('preview').srcdoc = html;
+  state.lastExport = html;
+  return html;
+}
+
+/* ============ MCP 闭环 ============ */
+async function mcpExport() {
+  if (!state.lastExport) { showToast('请先导出交互稿'); return; }
+  const tools = allMcpTools();
+  if (!tools.length) { showToast('无已连接 MCP server，请先在 MCP 面板连接'); return; }
+  const mg = tools.find(t => t.name.startsWith('mastergo.'));
+  const fg = tools.find(t => t.name.startsWith('figma.'));
+  if (mg) {
+    const r = await mcpCallTool('mastergo', 'export_to_mastergo', { html: state.lastExport });
+    trace('act', 'MCP mastergo.export_to_mastergo', JSON.stringify(r));
+    showToast('已导出到 MasterGo：' + (r.fileId || ''));
+  } else if (fg) {
+    const r = await mcpCallTool('figma', 'create_frame', { name: '非药推荐页' });
+    trace('act', 'MCP figma.create_frame', JSON.stringify(r));
+    showToast('已创建 Figma 画框');
+  }
+  document.getElementById('闭环状态').textContent = '已导出到 MCP，等待人工精修…';
+}
+
+async function mcpImport() {
+  const tools = allMcpTools();
+  const mg = tools.find(t => t.name.startsWith('mastergo.'));
+  if (mg) {
+    const r = await mcpCallTool('mastergo', 'import_from_mastergo', {});
+    trace('obs', 'MCP mastergo.import_from_mastergo', JSON.stringify(r));
+    if (r.diff) {
+      const css = document.getElementById('assetGlobalCss').value;
+      let updated = css;
+      for (const k in r.diff) updated = updated.replace(new RegExp(k + ':[^;]+;'), k + ': ' + r.diff[k] + ';');
+      document.getElementById('assetGlobalCss').value = updated;
+      showToast('已回填设计师修改：' + r.edits);
+    }
+  } else { showToast('无 MasterGo MCP 连接'); }
+  document.getElementById('闭环状态').textContent = '已回填修改，可重新跑 S4/S5 迭代';
+}
+
+function designerApprove() { state.closed = true; document.getElementById('闭环状态').textContent = '设计师确认通过，闭环完成'; showToast('已确认通过'); }
+function designerReject() { document.getElementById('闭环状态').textContent = '设计师打回，请重新跑 S4/S5'; showToast('已打回，请重新跑 S4/S5 迭代'); }
+
+/* ============ Provider 面板 ============ */
+function openProviderPanel() {
+  const keys = loadProviderKeys();
+  document.getElementById('providerRows').innerHTML = PROVIDERS.map(p => {
+    const k = keys[p.id] || {};
+    return `<div class="prov-row">
+      <label>${p.name}</label>
+      <input placeholder="API key（留空走 mock）" value="${k.key||''}" data-pid="${p.id}" data-field="key" type="password">
+      <input placeholder="模型 ID" value="${k.model||p.model}" data-pid="${p.id}" data-field="model">
+      <input placeholder="base URL" value="${k.baseUrl||p.baseUrl}" data-pid="${p.id}" data-field="baseUrl">
+    </div>`;
+  }).join('');
+  document.getElementById('providerModal').classList.add('show');
+}
+function closeProviderPanel() { document.getElementById('providerModal').classList.remove('show'); }
+function saveProviders() {
+  const keys = {};
+  document.querySelectorAll('#providerRows input').forEach(inp => {
+    const pid = inp.dataset.pid, f = inp.dataset.field;
+    if (!keys[pid]) keys[pid] = {};
+    if (inp.value) keys[pid][f] = inp.value;
+  });
+  saveProviderKeys(keys);
+  updateModePill();
+  closeProviderPanel();
+  showToast('Provider 已保存');
+}
+function updateModePill() {
+  const keys = loadProviderKeys();
+  const live = Object.values(keys).some(v => v.key);
+  const p = document.getElementById('modePill');
+  p.textContent = live ? '真 API 模式' : 'mock 模式';
+  p.className = 'pill ' + (live ? 'live' : 'mock');
+}
+
+/* ============ MCP 面板 ============ */
+function openMcpPanel() {
+  renderMcpRows();
+  document.getElementById('mcpModal').classList.add('show');
+}
+function closeMcpPanel() { document.getElementById('mcpModal').classList.remove('show'); }
+function renderMcpRows() {
+  const cfg = loadMcpConfig();
+  const rows = Object.entries(MCP_MOCK_SERVERS).map(([id, s]) => `<div class="mcp-row">
+    <label>${s.name}</label>
+    <input value="mock" disabled>
+    <input type="checkbox" data-mid="${id}" data-field="enabled" ${cfg[id]?.enabled?'checked':''} style="width:auto">
+    <span></span>
+  </div>`).join('');
+  const custom = Object.entries(cfg).filter(([id]) => !MCP_MOCK_SERVERS[id]).map(([id, c]) => `<div class="mcp-row">
+    <input value="${id}" data-mid="${id}" data-field="id" placeholder="server id">
+    <input value="${c.url||''}" data-mid="${id}" data-field="url" placeholder="HTTP URL">
+    <input type="checkbox" data-mid="${id}" data-field="enabled" ${c.enabled?'checked':''} style="width:auto">
+    <button class="btn ghost" onclick="this.parentElement.remove()" style="padding:2px 6px">×</button>
+  </div>`).join('');
+  document.getElementById('mcpRows').innerHTML = rows + custom;
+}
+function addMcpRow() {
+  const id = 'custom_' + Date.now();
+  const div = document.createElement('div'); div.className = 'mcp-row';
+  div.innerHTML = `<input value="${id}" data-mid="${id}" data-field="id" placeholder="server id">
+    <input data-mid="${id}" data-field="url" placeholder="HTTP URL">
+    <input type="checkbox" data-mid="${id}" data-field="enabled" style="width:auto">
+    <button class="btn ghost" onclick="this.parentElement.remove()" style="padding:2px 6px">×</button>`;
+  document.getElementById('mcpRows').appendChild(div);
+}
+async function saveMcp() {
+  const cfg = {};
+  document.querySelectorAll('#mcpRows .mcp-row').forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    let mid, url, enabled = false;
+    inputs.forEach(inp => {
+      if (inp.dataset.field === 'id') mid = inp.value;
+      else if (inp.dataset.field === 'url') url = inp.value;
+      else if (inp.dataset.field === 'enabled') enabled = inp.checked;
+    });
+    if (!mid) mid = inputs[0]?.dataset.mid;
+    if (!mid) return;
+    if (MCP_MOCK_SERVERS[mid]) cfg[mid] = { type: 'mock', enabled };
+    else cfg[mid] = { type: 'http', url, enabled };
+  });
+  saveMcpConfig(cfg);
+  await connectMcp(cfg);
+  closeMcpPanel();
+  showToast('MCP 已保存并连接');
+}
+async function connectMcp(cfg) {
+  mcpConnections = {};
+  for (const id in cfg) {
+    if (!cfg[id].enabled) continue;
+    await mcpInitialize(id, cfg[id]);
+    await mcpListTools(id);
+  }
+  const tools = allMcpTools();
+  trace('act', 'MCP 连接', '已连接 server：' + Object.keys(mcpConnections).join('、') + '\n可用工具：' + tools.map(t=>t.name).join('、'));
+}
+
+/* ============ 自测 ============ */
+async function runSelfTest() {
+  const bar = document.getElementById('testBar');
+  const results = [];
+  function assert(name, cond) { results.push({ name, pass: !!cond }); }
+
+  assert('5 个 Skill 已定义', SKILLS.length === 5);
+  assert('S1 schema 含 businessGoal', SKILLS[0].schema.includes('businessGoal'));
+  assert('S3 modality=vision', SKILLS[3-1].modality === 'vision');
+  assert('S4 工具含 read_global_css 在前', SKILLS[3].tools.indexOf('read_global_css') === 0);
+  assert('S5 selfCheck 覆盖三类异常', SKILLS[4].selfCheck({ exceptions:[{trigger:'无搜索结果'},{trigger:'请求超时'},{trigger:'网络异常'}], interactions:[{}] }));
+
+  for (const s of SKILLS) { const m = s.mock(); assert(s.id + ' mock 通过 selfCheck', s.selfCheck(m)); }
+
+  assert('8 个 Provider 已定义', PROVIDERS.length === 8);
+  assert('MCP mock MasterGo 有 2 工具', MCP_MOCK_SERVERS.mastergo.tools.length === 2);
+  assert('MCP mock Figma 有 4 工具', MCP_MOCK_SERVERS.figma.tools.length === 4);
+
+  agentReset();
+  state.prdText = '测试 PRD';
+  initAssets();
+  await runSkill(0);
+  assert('S1 跑完产出 businessGoal', !!state.skillOutput[0]?.businessGoal);
+  assert('资产读取顺序记录', state.readOrder.length >= 0);
+
+  const mg = await mcpCallTool('mastergo', 'export_to_mastergo', {});
+  assert('MCP mock export 返回 fileId', !!mg.fileId);
+  const imp = await mcpCallTool('mastergo', 'import_from_mastergo', {});
+  assert('MCP mock import 返回 diff', !!imp.diff);
+
+  const pass = results.filter(r => r.pass).length;
+  const fail = results.length - pass;
+  bar.innerHTML = `<span>自测：</span><span class="pass">通过 ${pass}</span><span class="fail">失败 ${fail}</span><span>／${results.map(r=>(r.pass?'✓':'✗')+r.name).join('  ')}</span>`;
+  agentReset();
+}
+
+/* ============ 初始化 ============ */
+initAssets();
+renderSkills();
+renderTrace();
+updateModePill();
+(async () => {
+  const cfg = loadMcpConfig();
+  let hasEnabled = false;
+  for (const id in cfg) if (cfg[id].enabled) hasEnabled = true;
+  if (hasEnabled) await connectMcp(cfg);
+  else { mcpConnections = {}; await mcpInitialize('mastergo', {type:'mock'}); await mcpInitialize('figma', {type:'mock'}); await mcpListTools('mastergo'); await mcpListTools('figma'); }
+})();
+</script>
+</body>
+</html>

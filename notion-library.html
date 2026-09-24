@@ -1,0 +1,1789 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI 交互设计知识库 · A–G</title>
+<style>
+  :root{
+    --bg:#ffffff; --sidebar:#f7f7f5; --text:#37352f; --muted:#787774;
+    --border:#e9e9e7; --border-soft:#f2f2f0; --border-strong:#d4d2cc;
+    --accent:#37352f; --accent-bg:#f1f1ef;
+    --hover:#f1f1ef; --blue:#0b6bcf; --code-bg:#f7f6f3;
+    --serif:ui-serif,Georgia,"Songti SC",serif;
+    --sans:ui-sans-serif,-apple-system,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;
+    --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.6;font-size:16px}
+
+  .topbar{position:sticky;top:0;z-index:50;height:45px;background:var(--bg);border-bottom:1px solid var(--border);
+    display:flex;align-items:center;gap:8px;padding:0 14px}
+  .topbar .menu{font-size:16px;color:var(--muted);background:none;border:none;cursor:pointer;width:30px;height:30px;border-radius:6px}
+  .topbar .menu:hover{background:var(--hover)}
+  .searchbox{flex:1;max-width:360px;display:flex;align-items:center;gap:6px;background:var(--hover);
+    border-radius:6px;padding:4px 10px;font-size:14px}
+  .searchbox input{border:none;background:transparent;outline:none;flex:1;font-size:14px;color:var(--text)}
+  .crumb{font-size:13px;color:var(--muted);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;margin-left:auto}
+  .crumb .clear{color:var(--blue);cursor:pointer;margin-left:8px;font-size:12px}
+  .crumb .clear:hover{text-decoration:underline}
+  .searchinfo .mod-hits{margin-bottom:6px;font-size:13px;color:var(--text);line-height:1.9}
+  .searchinfo .mod-hits .mh-lb{color:var(--muted);margin-right:4px}
+  .searchinfo .mod-jump{display:inline-block;background:#fff;border:1px solid var(--border);border-radius:5px;padding:1px 8px;margin:0 4px 2px 0;
+    color:#3b34a8;font-weight:600;cursor:pointer;text-decoration:none;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .searchinfo .mod-jump:hover{background:rgba(79,70,229,.08);border-color:#c7d2fe}
+  .sidebar{position:fixed;top:45px;bottom:0;left:0;width:262px;background:#f7f7f7;
+    border-right:1px solid #ededea;overflow-y:auto;overflow-x:hidden;padding:10px 8px 60px;transition:transform .2s ease;z-index:40;scrollbar-width:thin}
+  .sidebar::-webkit-scrollbar{width:8px}
+  .sidebar::-webkit-scrollbar-thumb{background:#deddd9;border-radius:4px}
+  .sidebar::-webkit-scrollbar-track{background:transparent}
+  .sidebar.closed{transform:translateX(-100%)}
+  /* workspace 标题行（Notion 顶部页名，hover 淡灰） */
+  .side-title{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:600;color:#37352f;
+    padding:6px 8px;border-radius:8px;margin:0 0 8px;user-select:none;white-space:nowrap}
+  .side-title:hover{background:rgba(55,53,47,.045)}
+  .side-title .dot{width:20px;height:20px;flex:none;background:#37352f;color:#fff;border-radius:5px;display:grid;place-items:center;font-size:11px;font-weight:700}
+  .side-group{margin:0 0 2px}
+  .side-group>div{font-size:13px;color:#787774;font-weight:600}
+  /* 模块折叠头 = 树父节点（chevron 折叠，hover 整行淡灰） */
+  .side-group .side-cat{display:flex;align-items:center;gap:2px;width:100%;text-align:left;margin:0;
+    padding:6px 6px;border:none;background:transparent;border-radius:6px;font-family:inherit;font-size:13.5px;font-weight:700;color:#333;user-select:none;cursor:pointer;line-height:1.4;margin-top:2px}
+  .side-cat:hover{background:rgba(55,53,47,.05)}
+  .side-cat .side-arrow{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:none;
+    color:#8a8986;transition:transform .15s ease,color .1s;font-size:0;margin-right:2px}
+  .side-cat .side-arrow svg{width:13px;height:13px;color:#8a8986}
+  .side-cat:hover .side-arrow{color:#37352f}
+  .side-cat:hover .side-arrow svg{color:#37352f}
+  .side-cat.collapsed .side-arrow{transform:rotate(-90deg)}
+  .side-cat-txt{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .side-cat-body.collapsed{display:none}
+  .side-cat-body{padding-left:18px}
+  /* 模式项 = 树子节点（缩进，hover 灰、选中深灰块，Notion 无白底无边框） */
+  .side-item{display:flex;align-items:center;gap:8px;font-size:13.5px;color:#57564f;text-decoration:none;
+    padding:5px 8px;border-radius:6px;margin:0;line-height:1.45;min-height:28px}
+  .side-item .ic{width:15px;height:15px;color:#7a7974;flex:none}
+  .side-item:hover{background:rgba(55,53,47,.05)}
+  .side-item:hover .ic{color:#57564f}
+  .side-item.dim{color:#57564f}
+  .side-item.dim .ic{color:#7a7974}
+  .side-item.on{background:rgba(79,70,229,.1);color:#3b34a8;font-weight:600}
+  .side-item.on .ic{color:#3b34a8}
+  .side-item.mod{font-weight:600;font-size:14px;color:#37352f;padding-left:8px;margin-top:6px}
+  .side-item.mod .ic{color:#37352f}
+  .search-hide{display:none !important}
+  .side-item.hide-item{display:none}
+
+  .content{transition:margin-left .2s ease}
+  .content.shifted{margin-left:262px}
+  .doc{max-width:720px;margin:0 auto;padding:56px 56px 180px}
+  .doc-head{font-size:13px;color:#787774;display:flex;gap:6px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+  .doc-head b{color:#37352f;font-weight:600}
+  h1.title{font-size:40px;font-weight:700;line-height:1.15;letter-spacing:-.015em;margin-bottom:10px}
+  .lead{color:rgba(55,53,47,.7);font-size:17px;line-height:1.6;margin-bottom:6px}
+  .mod-lead{background:rgba(79,70,229,.12);border-left:3px solid #4338ca;padding:11px 16px;margin:12px 0 14px;font-size:14.5px;line-height:1.75;color:#35406e;border-radius:0 8px 8px 0;max-width:none}
+  .doc-sep{border:none;margin:24px 0 28px}
+  .appendix-sep{border:none;border-top:1px solid rgba(55,53,47,.14);margin:28px 0 22px}
+  .searchinfo{background:#f7f7f7;border-radius:6px;padding:12px 16px;font-size:14px;color:var(--muted)}
+  .searchinfo b{color:var(--text)}
+  .searchinfo .clear{color:#2383e2;cursor:pointer;margin-left:8px}
+  .searchinfo .clear:hover{text-decoration:underline}
+  .searchbar{position:sticky;top:45px;z-index:20;max-width:720px;margin:0 auto;display:none;padding:8px 8px 0}
+  .searchbar.show{display:block}
+  .searchbar .searchinfo{margin:0;box-shadow:0 2px 8px rgba(0,0,0,.06)}
+  mark.hl{background:rgba(233,160,0,.32);color:inherit;border-radius:3px;padding:0 1px}
+
+  h2.sec{font-size:22px;font-weight:700;margin:20px 0 6px;letter-spacing:-.01em;display:flex;gap:12px;align-items:baseline;scroll-margin-top:64px}
+  h2.sec .mk{font-size:13px;color:#787774;font-weight:500;margin-left:auto;white-space:nowrap}
+  h3.pat{font-size:16px;font-weight:600;margin:0;display:flex;align-items:center;gap:12px;letter-spacing:-.01em}
+  .pat-hd{cursor:pointer;user-select:none;border-radius:8px;padding:9px 12px;transition:background .12s;border:1px solid transparent;align-items:flex-start}
+  .pat-hd:hover{background:#fff;border-color:var(--border-soft)}
+  .pat-hd .pat-arr{margin-left:auto;font-size:18px;color:#6f6e68;transition:transform .15s;flex:none;margin-top:2px;display:inline-grid;place-items:center;width:28px;height:28px;border-radius:7px;background:rgba(0,0,0,.03)}
+  .pat-hd:hover .pat-arr{color:#2f2f2e}
+  /* 模块1 模式折叠 = 附录式白卡；展开时头与内容融合为一张卡 */
+  .card-fold{background:#fff;border:1px solid #e3e2de;border-radius:10px;overflow:hidden;transition:border-color .15s}
+  .card-fold.pat-sec + .card-fold.pat-sec{margin-top:10px}
+  .card-fold .pat-hd{background:transparent;border:none;border-radius:0;padding:15px 16px 15px 18px;align-items:flex-start}
+  .card-fold .pat-hd-t{font-size:15.5px}
+  .card-fold .pat-hd-d{margin-top:1px}
+  .card-fold .pat-body{margin:0}
+  .card-fold.open .pat-hd{background:#fafaf9;border-bottom:1px solid #f0efec}
+  .card-fold.open{background:#fff}
+  .card-fold.open .pcard{border:none;border-radius:0;background:transparent;padding:18px 22px 22px;margin:0}
+  .pat-sec.open .pat-hd .pat-arr{transform:rotate(180deg)}
+  .pat-hd-t{white-space:nowrap;font-weight:650;color:#2f2f2e;padding-top:1px;flex:none}
+  .pat-hd-t svg{width:20px;height:20px;flex:none}
+  .pat-hd-d{flex:1;font-size:13.5px;color:#8a8a85;font-weight:400;line-height:1.5;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;padding-top:1px}
+  .pat-sec.open .pat-hd-d{color:#6a6a64}
+  .pat-hd>svg{width:22px;height:22px;flex:none}
+  .pat-body{display:none;margin-top:6px}
+  .pat-sec.open .pat-body{display:block}
+  .appx{margin:0 0 12px}
+  .appx-hd{display:flex;align-items:center;gap:10px;width:100%;text-align:left;border:1px solid var(--border);background:#fff;border-radius:8px;padding:12px 16px;font-family:inherit;font-size:17px;font-weight:650;color:#2f2f2e;cursor:pointer;transition:background .12s}
+  .appx-hd:hover{background:#fafafa}
+  .appx-t{letter-spacing:-.01em}
+  .appx-mk{margin-left:6px;font-size:12px;color:#a5a49f;font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .appx-hd .pat-arr{margin-left:auto;flex:none}
+  .appx-bd{display:none;padding:14px 6px 6px}
+  .appx.open .appx-bd{display:block}
+  .appx.open .appx-hd .pat-arr{transform:rotate(180deg)}
+  .combo-row{display:flex;gap:10px;align-items:flex-start;font-size:15px;line-height:1.7;color:rgba(55,53,47,.85);padding:8px 0}
+  .combo-k{flex:none;font-weight:600;color:#2f2f2e;min-width:88px}
+  .pat-lead{font-size:15px;line-height:1.7;color:#4a4a46;font-weight:400;margin:2px 0 12px;max-width:60ch}
+  h3.pat .ic{color:#37352f}
+  .pat-sec{margin-top:18px}
+  .pat-sec + .pat-sec{padding-top:6px;margin-top:22px}
+  p.body{color:var(--text);margin:8px 0;line-height:1.65}
+  .field-label{font-size:12px;font-weight:500;color:#787774;margin:16px 0 5px;display:flex;align-items:center;gap:6px;letter-spacing:.015em}
+  .field-val{font-size:15px;line-height:1.7;color:rgba(55,53,47,.85)}
+  .field-val ul{padding-left:20px}
+  .field-val li{margin:3px 0}
+  .pill{display:inline-block;background:rgba(55,53,47,.05);border-radius:4px;padding:1px 6px;font-size:12.5px;color:rgba(55,53,47,.7);margin-right:6px}
+  .ref-line{font-size:14px;color:var(--muted)}
+  .ic{width:1em;height:1em;display:inline-block;vertical-align:-0.13em;flex:none;color:inherit}
+
+  /* 模式详情 · 分区信息卡 */
+  .pcard{border:1px solid #f0f0ef;border-radius:12px;background:#FAFAFA;padding:22px 24px;margin:0 0 16px}
+  .prow{display:grid;grid-template-columns:1fr 1fr;gap:16px 32px}
+  @media(max-width:560px){.prow{grid-template-columns:1fr}}
+  .pcell .phead{font-size:11px;font-weight:600;color:#a5a49f;letter-spacing:.08em;text-transform:uppercase;margin-bottom:6px;display:flex;align-items:center;gap:6px}
+  .pcell .phead::before{content:'';width:6px;height:6px;border-radius:50%;background:#4338ca;opacity:.7;flex:none}
+  .pcard>.phead{font-size:11px;font-weight:600;color:#a5a49f;letter-spacing:.08em;text-transform:uppercase;margin:0 0 2px;display:flex;align-items:center;gap:6px}
+  .pcard>.phead::before{content:'';width:6px;height:6px;border-radius:50%;background:#4338ca;opacity:.7;flex:none}
+  .pcell .pbody{font-size:14.5px;line-height:1.7;color:rgba(55,53,47,.85)}
+  .ptips{margin:0;padding:0;list-style:none}
+  .pdiv{height:18px;margin:0}
+  .ptips li{position:relative;padding:9px 0 9px 30px;font-size:14.5px;line-height:1.65;color:#3d3d39}
+  .ptips li:last-child{border-bottom:none}
+  .ptips li::before{content:'';position:absolute;left:3px;top:13px;width:14px;height:14px;border-radius:4px;background:#eef1ff;border:1.5px solid #4338ca;box-sizing:border-box}
+  .ptips li::after{content:'✓';position:absolute;left:7px;top:11px;font-size:9.5px;color:#4338ca;font-weight:700}
+  .ptag{display:inline-flex;align-items:center;background:#f4f6fb;color:#3d4672;border:1px solid #e4e8f4;border-radius:100px;padding:5px 13px;font-size:12.5px;font-weight:500;margin:0 7px 7px 0;transition:.12s}
+  .ptag:hover{border-color:#c9d1ea;background:#eef1fb}
+  .refb{display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:#3d3d39;background:#fff;border:1px solid var(--border);border-radius:8px;padding:5px 10px 5px 6px;font-size:12.5px;margin:0 8px 8px 0;transition:.12s;font-weight:500}
+  .refb:hover{border-color:var(--rc);box-shadow:0 0 0 1px var(--rc) inset}
+  .refb-ic{width:22px;height:22px;border-radius:6px;background:var(--rc);color:#fff;display:grid;place-items:center;font-size:11px;font-weight:700;flex:none;font-family:var(--sans)}
+  .refb:hover .refb-ic{background:var(--rc)}
+  .pchip{display:inline-flex;align-items:center;background:#f5f5f3;color:#55554f;border:1px solid #e7e7e3;border-radius:6px;padding:3px 9px;font-size:12.5px;margin:0 6px 6px 0}
+  .pmeta{padding-top:4px}
+  .pmeta .mrow{display:flex;gap:14px;font-size:14px;line-height:1.7;padding:7px 0;color:rgba(55,53,47,.85)}
+  .pmeta .mrow .mkey{flex:none;font-size:11px;font-weight:600;color:#a5a49f;letter-spacing:.05em;text-transform:uppercase;width:112px;padding-top:2px}
+  .pmeta .mrow .mval{flex:1}
+  .quote{background:rgba(233,160,0,.13);border-left:3px solid #e8a000;padding:12px 18px;margin:0 0 16px;font-size:14.5px;color:#6b5b2e;line-height:1.7;border-radius:0 8px 8px 0}
+  .quote b{color:#a05f00}
+
+  .outline{border-top:1px solid rgba(55,53,47,.07);border-bottom:1px solid rgba(55,53,47,.07);padding:14px 2px;margin:26px 0}
+  .outline .ot{font-size:12px;color:#787774;font-weight:500;margin-bottom:6px}
+  .outline a{display:block;color:#37352f;text-decoration:none;font-size:14.5px;padding:3px 0}
+  .outline a:hover{color:#37352f;text-decoration:underline}
+  .outline a.sub{padding-left:20px;font-size:13.5px;color:#787774}
+
+  table{width:100%;border-collapse:collapse;font-size:14px;margin:14px 0}
+  th{font-size:12.5px;color:#787774;font-weight:600;text-align:left;border-bottom:1px solid rgba(55,53,47,.3);padding:6px 8px}
+  td{border-bottom:1px solid rgba(55,53,47,.08);padding:7px 8px;vertical-align:top}
+  td.dots{font-family:var(--mono);font-size:12px;white-space:nowrap;color:#787774}
+
+  .check{border-top:1px solid var(--border);padding:7px 0;font-size:15px;align-items:flex-start;line-height:1.6;color:rgba(55,53,47,.85)}
+  .toplink{display:inline-block;margin-top:20px;color:var(--blue);font-size:14px;text-decoration:none}
+
+  /* demo 区 */
+  .demo-area{border:1px solid #dfddd7;border-radius:12px;margin:0;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.03)}
+  .pcard .demo-area{border:1px solid var(--border-soft);border-radius:10px;margin-top:2px}
+  .demo-head{background:#fff;padding:9px 16px;font-size:12.5px;color:#8a8a86;border-bottom:1px solid var(--border);font-family:var(--mono);letter-spacing:.04em}
+  .demo-stage{position:relative;background:radial-gradient(rgba(0,0,0,.05) 1px,transparent 1px);background-color:#f7f6f2;background-size:20px 20px;padding:26px 28px;min-height:190px;overflow:hidden}
+  .demo-note{background:#fff;padding:7px 14px;font-size:12px;color:var(--muted);border-top:1px solid var(--border)}
+  /* B 模块 · 端到端对话工作台 */
+  .bd-ws{display:flex;flex-direction:column;background:#fff;border:1px solid var(--border);border-radius:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.04);font-size:13px}
+  .bd-top{display:flex;align-items:center;gap:8px;padding:8px 12px;border-bottom:1px solid var(--border);background:#fbfbfa}
+  .bd-ico{width:20px;height:20px;border-radius:6px;background:#111;color:#fff;display:grid;place-items:center;font-size:11px;flex:none}
+  .bd-top b{font-weight:600;color:#37352f}
+  .bd-top .sub{margin-left:auto;font-size:11px;color:#8a8a86;font-family:var(--mono)}
+  .bd-chat{max-height:210px;overflow-y:auto;padding:12px 14px;display:flex;flex-direction:column;gap:10px;scrollbar-width:thin}
+  .bd-msg{display:flex;gap:8px;align-items:flex-start;max-width:100%}
+  .bd-msg .av{width:24px;height:24px;border-radius:7px;flex:none;display:grid;place-items:center;font-size:11px}
+  .bd-msg.ai .av{background:linear-gradient(135deg,#5C57FF,#3A34FF);color:#fff}
+  .bd-msg.me{flex-direction:row-reverse}
+  .bd-msg.me .av{background:#e3e2df;color:#555}
+  .bd-msg .txt{max-width:80%;padding:7px 11px;border-radius:10px;line-height:1.6;color:#333;white-space:pre-wrap;word-break:break-word}
+  .bd-msg.ai .txt{background:#f0efec;border-top-left-radius:3px}
+  .bd-msg.me .txt{background:#3A34FF;color:#fff;border-top-right-radius:3px}
+  .bd-msg .txt .src{display:block;margin-top:6px;font-size:10px;color:#8a8a86;font-family:var(--mono);border-top:1px dashed rgba(0,0,0,.12);padding-top:5px}
+  .bd-composer{border-top:1px solid var(--border);padding:8px 10px 10px;display:flex;flex-direction:column;gap:6px;background:#fff}
+  .bd-box{border:1.5px solid var(--border);border-radius:9px;display:flex;align-items:center;gap:4px;padding:2px;background:#fff;transition:border-color .15s}
+  .bd-box:focus-within{border-color:#3A34FF}
+  .bd-ta{border:none;outline:none;resize:none;flex:1;font-family:inherit;font-size:13px;padding:7px 8px;min-height:34px;line-height:1.5;background:transparent;color:#333}
+  .bd-tools{display:flex;align-items:center;gap:5px}
+  .bd-btn{width:28px;height:28px;border-radius:7px;border:1px solid var(--border);background:#fff;cursor:pointer;font-size:13px;display:grid;place-items:center;color:#666;transition:.12s;font-family:inherit;flex:none}
+  .bd-btn:hover,.bd-btn.on{border-color:#3A34FF;color:#3A34FF;background:#f2f1ff}
+  .bd-send{margin-left:auto;border:none;background:#3A34FF;color:#fff;border-radius:8px;padding:6px 14px;font-size:12.5px;cursor:pointer;font-family:inherit;font-weight:500;flex:none}
+  .bd-send:disabled{background:#e0dfdc;color:#9a9a94;cursor:not-allowed}
+  .bd-send.stop{background:#111}
+  .bd-voice{display:none;align-items:center;gap:10px;padding:8px 12px;border:1.5px solid #3A34FF;border-radius:9px;background:#f7f6ff;font-size:13px;color:#3A34FF}
+  .bd-voice.show{display:flex}
+  .bd-wave{display:flex;align-items:center;gap:3px;height:18px}
+  .bd-wave i{width:3px;height:100%;background:#3A34FF;border-radius:2px;animation:bdwave .9s ease-in-out infinite}
+  .bd-wave i:nth-child(2){animation-delay:.12s}.bd-wave i:nth-child(3){animation-delay:.24s}
+  .bd-wave i:nth-child(4){animation-delay:.36s}.bd-wave i:nth-child(5){animation-delay:.48s}
+  @keyframes bdwave{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+  .bd-done{margin-left:auto;border:1px solid var(--border);background:#fff;color:#333;border-radius:7px;padding:4px 11px;font-size:12px;cursor:pointer;font-family:inherit}
+  .bd-menu{position:absolute;z-index:30;background:#fff;border:1px solid var(--border);border-radius:9px;box-shadow:0 6px 20px rgba(0,0,0,.1);padding:5px;display:none;min-width:190px}
+  .bd-menu.show{display:block}
+  .bd-menu .grp{font-size:10px;color:#8a8a86;padding:4px 8px 2px;font-family:var(--mono);letter-spacing:.05em}
+  .bd-menu .it{display:flex;align-items:center;gap:8px;padding:6px 8px;border-radius:6px;cursor:pointer;font-size:12.5px}
+  .bd-menu .it:hover{background:#f2f1ff;color:#3A34FF}
+  .bd-menu .it small{margin-left:auto;color:#999;font-family:var(--mono)}
+  .bd-suggest{display:flex;flex-wrap:wrap;gap:6px}
+  .bd-chip{border:1px solid var(--border);background:#fbfbfa;color:#555;border-radius:100px;padding:4px 10px;font-size:11.5px;cursor:pointer;transition:.12s}
+  .bd-chip:hover{border-color:#3A34FF;color:#3A34FF}
+  .bd-ctx{display:flex;flex-wrap:wrap;gap:6px}
+  .bd-pill{display:flex;align-items:center;gap:6px;border:1px solid var(--border-soft);background:#f5f5f2;border-radius:7px;padding:3px 8px;font-size:11px;color:#555}
+  .bd-pill .ic{width:15px;height:15px;background:#9aa;border-radius:4px;display:grid;place-items:center;font-size:9px;flex:none}
+  .bd-pill .x{cursor:pointer;color:#999;font-size:12px;padding:0 2px}
+  .bd-pill .x:hover{color:#333}
+  .demo-ph{color:#b0afa9;font-size:12.5px;display:flex;align-items:center;justify-content:center;height:100%;min-height:150px;letter-spacing:.03em}
+  .demo-paper{background:#fff;border:1px solid var(--border);border-radius:6px;padding:18px;max-width:460px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  .demo-paper b{font-size:15px;display:block;margin-bottom:8px}
+  .demo-paper p{font-size:13.5px;color:#444;margin:6px 0}
+  .demo-paper textarea{width:100%;border:1px solid var(--border);border-radius:6px;padding:8px;font-size:14px;font-family:var(--sans);min-height:64px;resize:vertical}
+  .fp-btn{display:block;width:100%;text-align:left;background:#f7f7f5;border:1px solid var(--border);
+    border-radius:6px;padding:7px 10px;margin:5px 0;font-size:13px;color:var(--text);cursor:pointer}
+  .fp-btn:hover{background:#fff;border-color:#bbb}
+  .fp-btn.inline{display:inline-block;width:auto;margin:0 5px 0 0}
+  .fp-result{margin-top:10px;font-size:12.5px;color:#0b6bcf;background:#eef4fb;border-radius:6px;padding:8px 10px;display:none;line-height:1.6}
+  .fp-result.show{display:block}
+  .mini-chip{display:inline-block;background:#fff;border:1px solid var(--border);border-radius:6px;padding:3px 9px;font-size:12px;margin:2px;cursor:pointer}
+  .mini-chip:hover{border-color:#999;background:#f7f7f5}
+  .mini-chip.act{background:#111;color:#fff;border-color:#111}
+  .sim-scene{background:#fff;border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:8px}
+  .sim-msg{background:var(--accent-bg);border-radius:8px;padding:10px 12px;font-size:13.5px;margin:6px 0}
+  .sim-msg.ai{background:#f0f4fb}
+  .sim-progress{height:6px;background:var(--hover);border-radius:3px;overflow:hidden;margin:8px 0}
+  .sim-progress i{display:block;height:100%;background:#111;transition:width .4s;width:0}
+
+  .x{display:flex;gap:9px;align-items:baseline;margin-bottom:10px;font-size:14px}
+  .xn{font-family:var(--mono);color:#c00;font-weight:700}
+
+  /* ===== A 模块实体交互 demo（自 notion-style.html 移植） ===== */
+  /* 悬浮球 */
+  .floatball{position:absolute;right:18px;bottom:16px;width:44px;height:44px;border-radius:50%;
+    background:#111;color:#fff;display:grid;place-items:center;font-size:20px;cursor:grab;
+    box-shadow:0 4px 14px rgba(0,0,0,.25);user-select:none;z-index:5}
+  .floatball.dragging{cursor:grabbing;opacity:.85}
+  .floatpanel{position:absolute;right:18px;bottom:70px;width:230px;background:#fff;border:1px solid var(--border);
+    border-radius:10px;box-shadow:0 8px 30px rgba(0,0,0,.15);padding:14px;display:none;z-index:6}
+  .floatpanel.show{display:block}
+  .floatpanel b{font-size:14px;display:block;margin-bottom:6px}
+  .fp-s{font-size:12px;color:#666;margin-bottom:10px;line-height:1.5}
+  /* 划词浮条 */
+  .sel-para{font-size:15px;color:#333;line-height:2;background:#fff;padding:14px;border:1px solid var(--border);border-radius:6px;cursor:text}
+  .sel-para::selection{background:#cfe3ff}
+  .sel-bar{position:relative;display:inline-flex;gap:6px;background:#fff;border:1px solid var(--border);border-radius:8px;
+    padding:5px;box-shadow:0 4px 14px rgba(0,0,0,.14);margin:4px 0;z-index:7}
+  .sel-bar .fp-btn{width:auto;display:inline-block;margin:0}
+  .sel-result{margin-top:10px;font-size:13px;color:#333;background:#fff;border:1px solid var(--border);border-radius:6px;padding:10px 14px;display:none;line-height:1.6}
+  /* 导航栏 demo */
+  .nav-demo{display:flex;align-items:center;gap:14px;background:#fff;border:1px solid var(--border);border-radius:6px;padding:9px 14px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.05);flex-wrap:wrap}
+  .nd-brand{font-weight:700;font-size:14px;margin-right:6px}
+  .nd-item{font-size:13px;color:#555;cursor:pointer;padding:3px 6px;border-radius:4px}
+  .nd-item:hover{background:#f1f1ef}
+  .nd-ai{background:#111;color:#fff;border-radius:6px;padding:5px 10px;font-weight:500;cursor:pointer}
+  .nd-ai:hover{background:#333}
+  .nd-user{margin-left:auto;font-size:16px}
+  .nd-page{background:#fff;border:1px solid var(--border);border-radius:6px;padding:16px;max-width:420px}
+  .nd-page b{font-size:15px;display:block;margin-bottom:6px}
+  .nd-page p{font-size:13.5px;color:#444}
+  .nd-panel{position:relative;background:#fff;border:1px solid var(--border);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.12);padding:14px;max-width:240px;margin-top:12px;display:none}
+  .nd-panel.show{display:block}
+  .nd-panel b{font-size:14px;display:block;margin-bottom:6px}
+  /* 工具栏 demo */
+  .tb-bar{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--border);border-radius:6px;padding:7px 12px;margin-bottom:14px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  .tb-bar b{font-size:13px;margin-right:auto}
+  .tb-ic{font-size:13px;color:#444;padding:2px 8px;border-radius:4px;cursor:pointer}
+  .tb-ic:hover{background:#f1f1ef}
+  .tb-ai{background:#111;color:#fff;border-radius:6px;font-weight:500}
+  .tb-ai:hover{background:#333}
+  .tb-text{background:#fff;border:1px solid var(--border);border-radius:6px;padding:14px;font-size:14px;color:#333;line-height:1.8;max-width:460px}
+  .tb-menu{display:none;background:#fff;border:1px solid var(--border);border-radius:8px;padding:6px;box-shadow:0 4px 14px rgba(0,0,0,.14);max-width:240px;margin-top:8px}
+  .tb-menu.show{display:block}
+  .tb-menu .fp-btn{width:100%}
+  /* 右键菜单 demo */
+  .ctx-list{background:#fff;border:1px solid var(--border);border-radius:6px;padding:6px;max-width:300px}
+  .ctx-file{font-size:14px;padding:7px 10px;border-radius:4px;cursor:default;color:#333}
+  .ctx-file:hover{background:#f1f1ef}
+  .ctx-file.on{background:#e7e7e3}
+  .ctx-menu{position:absolute;background:#fff;border:1px solid #ddd;border-radius:8px;box-shadow:0 8px 26px rgba(0,0,0,.18);min-width:190px;padding:5px;z-index:8;display:none}
+  .ctx-menu.show{display:block}
+  .cm-item{font-size:13px;padding:6px 10px;border-radius:4px;cursor:pointer}
+  .cm-item:hover{background:#f1f1ef}
+  .cm-item.ai{color:#0b6bcf}
+  .cm-item.ai:hover{background:#eef4fb}
+  .cm-sep{height:1px;background:#eee;margin:4px 6px}
+  /* 就近触发 demo */
+  .near-card{position:relative;background:#fff;border:1px solid var(--border);border-radius:8px;padding:16px;max-width:420px;cursor:pointer}
+  .nc-head{font-weight:700;font-size:14px;display:flex;align-items:center;gap:8px;margin-bottom:8px}
+  .nc-near{display:none;width:22px;height:22px;border-radius:6px;background:#111;color:#fff;place-items:center;font-size:12px;cursor:pointer}
+  .nc-txt{font-size:13.5px;color:#444}
+  .near-card:hover .nc-near{display:grid}
+  .near-menu{display:none;background:#fff;border:1px solid var(--border);border-radius:8px;padding:5px;box-shadow:0 4px 14px rgba(0,0,0,.14);max-width:230px;margin-top:8px}
+  .near-menu.show{display:block}
+  /* 命令面板 demo */
+  .cmd-open{background:#fff;border:1px solid var(--border);border-radius:8px;padding:12px 18px;font-size:14px;color:#333;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+  .cmd-open:hover{border-color:#aaa}
+  .cmd-open kbd{background:#f1f1ef;border-radius:4px;padding:2px 6px;font-size:12px;font-family:var(--mono);margin-left:6px}
+  .cmd-mask{position:absolute;inset:0;background:rgba(0,0,0,.25);display:none;z-index:8}
+  .cmd-mask.show{display:block}
+  .cmd-panel{position:relative;width:min(420px,90%);background:#fff;border-radius:10px;box-shadow:0 18px 50px rgba(0,0,0,.3);overflow:hidden;z-index:9;display:none;margin:0 auto}
+  .cmd-panel.show{display:block}
+  .cmd-input{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);padding:12px 16px;font-size:14px}
+  .cmd-input span{font-family:var(--mono);font-size:14px}
+  .cmd-input input{border:none;outline:none;flex:1;font-size:14px;background:transparent;color:var(--text)}
+  .cmd-list{padding:6px;max-height:220px;overflow-y:auto}
+  .cmd-item2{font-size:13.5px;padding:8px 12px;border-radius:6px;cursor:pointer;display:flex;gap:8px;align-items:center}
+  .cmd-item2:hover,.cmd-item2.sel{background:#f1f1ef}
+  .cmd-item2 .k{margin-left:auto;font-family:var(--mono);font-size:11px;color:#999}
+  .cmd-foot{border-top:1px solid var(--border);padding:7px 16px;font-size:11px;color:#999}
+  /* 空状态 demo */
+  .empty-card{background:#fff;border:1px solid var(--border);border-radius:10px;padding:26px 24px;width:min(360px,92%);text-align:center;box-shadow:0 4px 20px rgba(0,0,0,.08)}
+  .ec-eyebrow{font-size:12px;color:var(--muted);margin-bottom:8px}
+  .ec-title{font-size:18px;font-weight:700;margin-bottom:6px}
+  .ec-sub{font-size:13.5px;color:var(--muted);margin-bottom:16px}
+  .ec-btn{display:block;width:100%;background:#f7f7f5;border:1px solid var(--border);border-radius:8px;padding:9px 12px;margin:6px 0;font-size:13.5px;color:var(--text);cursor:pointer;text-align:left}
+  .ec-btn:hover{background:#fff;border-color:#bbb}
+  .ec-skip{margin-top:12px;font-size:12.5px;color:var(--blue);cursor:pointer;display:inline-block}
+
+  @media(max-width:820px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:none}.content.shifted{margin-left:0}}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <button class="menu" id="menuBtn" onclick="toggleSidebar()"><svg class="ic" style="font-size:18px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg></button>
+  <div class="searchbox"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/></svg> <input id="searchInput" placeholder="搜索全部模式…" oninput="doSearch(this.value)"></div>
+</div>
+
+<aside class="sidebar" id="sidebar">
+  <div class="side-title"><span class="dot">AI</span> 交互设计知识库</div>
+  <div id="sideTree"></div>
+</aside>
+
+<main class="content shifted" id="content">
+  <div class="searchbar" id="searchBar"></div>
+  <div class="doc" id="doc"></div>
+</main>
+<script>
+/* =====================================================================
+   LIBRARY — A–G 七模块数据。每个模块 patterns 内模式字段为统一 schema：
+   emoji/name/cat/desc/use/how(数组)/trade/refs(数组) + 可选扩展字段。
+   ===================================================================== */
+const LIBRARY = [
+/* —— A 入口设计 —— */
+{ id:"1", title:"1 · 入口设计", lead:"入口设计决定用户在什么时刻、从哪里唤起 AI，以及系统会带入哪些任务上下文。好的入口不只要容易找到，更要贴近当前任务，并让用户清楚知道点击后会发生什么。",
+  groups:[["常驻入口","导航栏按钮","悬浮球","工具栏图标"],["上下文入口","划词唤起","右键菜单","就近触发"],["效率入口","命令面板"],["新手入口","空状态引导"]],
+  patterns:[{e:"🧭",n:"导航栏按钮",c:"常驻入口",d:"把 AI 放在产品最稳定的位置，作为用户反复进入的一级功能入口。",u:"AI 是产品核心卖点、需要高曝光，或要在用户心智里确立「这是个 AI 产品」时。",h:["文字标签 + 图标，别只放图标（可发现性）","有选中/激活态，与面板开合联动","位置稳定、跨页面一致"],t:"导航位稀缺，放上去就要为它的点击率负责；AI 不够高频成熟时，占一级入口反而喧宾夺主。",r:["Gmail Gemini","Slack","Linear"],diff:"可发现性最高、位置最稳定，但与正在处理的具体内容距离较远，占用稀缺的一级导航空间。",avoid:"AI 仍是低频试验能力，或无法跨页面保持稳定体验时，不要过早占据一级导航资源。",states:["默认","悬停/聚焦","当前页","面板展开","新结果","不可用"],metrics:["导航点击率","任务发起率","重复访问率"],rel:"主任务入口 · 导航项 · 状态徽标 · 侧边面板",trigger:"始终位于稳定导航位置；进入后保留当前页面作为可选上下文。激活状态与页面/侧栏/面板开合同步。",platform:"桌面用顶栏或侧栏；移动端进主导航或底部一级入口，避免藏在多层汉堡菜单。",a11y:"用真实导航链接/按钮并标识当前状态；图标旁保留文字。名称表达价值，如「生成周报」而非「智能」。"},
+   {e:"🔵",n:"悬浮球",c:"常驻入口",d:"始终停留在界面边缘的全局入口，滚动或进入深层内容后仍可随时唤起。",u:"需要全局常驻、随时可唤起，又不想长期占用固定版面；尤其适合内容长、需持续滚动的编辑类产品。",h:["可拖拽 + 自动吸边，不遮挡正文","红点/数字做未读或建议提醒","点击展开面板、再点收起，状态清晰","沉浸编辑时也保持可达"],t:"移动端易误触，需收起态与安全边距；长期悬浮会和正文争夺注意力，默认低调、激活才强调。",r:["微软 365 Copilot","Intercom","Crisp"],diff:"比导航按钮更靠近当前内容，不随页面滚动消失；代价是持续占用视觉注意力，可能遮挡内容。",avoid:"有固定底部操作、局部任务多于全局任务，或悬浮按钮遮挡正文和关键控件时不应使用。",states:["默认","悬停/聚焦","新提醒","拖动中","面板展开","不可用"],metrics:["入口点击率","唤起后任务发起率","误触关闭率"],rel:"AI 唤起 · 继续任务 · 浮动按钮 · 徽标 · 侧边面板",trigger:"常驻显示；点击或键盘确认后展开。新结果徽标只表达状态，不擅自打开。默认携带当前页面/项目上下文并说明范围。",platform:"桌面可拖动吸边；移动端保持稳定位置，避开底部导航、键盘与安全区域，不把拖动作为必要操作。",a11y:"用有名称的按钮，支持 Enter/Space 与清晰焦点；提醒不只靠红点颜色；持续动画应允许减少。文案写「AI 助手」或具体任务。"},
+   {e:"🛠️",n:"工具栏图标",c:"常驻入口",d:"把 AI 作为编辑能力的一部分，无需离开当前工作区即可改写、总结或生成。",u:"文档、表格、设计稿等编辑场景内，对当前正在写的内容做即时处理。",h:["紧贴编辑区，图标语义清晰（✦/魔法棒等约定）","与其他工具风格统一、不突兀","通常配合「选中内容」使用"],t:"工具条空间有限，图标多则拥挤；AI 项要有足够辨识度，否则淹没在一排格式按钮里。",r:["WPS AI","Figma","Canva"],diff:"比导航入口更贴近当前任务，比划词覆盖更广；上下文通常只精确到当前文档或编辑器。",avoid:"非编辑/操作场景、AI 不依赖当前内容，或工具栏已高度拥挤时应避免。",states:["默认","悬停/聚焦","已有选区","禁用","菜单展开","执行中"],metrics:["工具栏使用率","任务完成率","执行后撤销率"],rel:"快捷任务 · 图标按钮 · 工具提示 · 动作菜单",trigger:"编辑器获焦或存在可处理内容时可用；依赖选区时，未选中应禁用并解释原因。打开后携带当前文档或编辑对象。",platform:"桌面进固定工具栏；移动端收进选中文本后操作条或「更多」菜单，保留足够触控面积。",a11y:"图标按钮必须有可访问名称与工具提示；禁用不只降透明度。文案直接写结果，如「改写」「生成摘要」。"},
+   {e:"✍️",n:"划词唤起",c:"上下文入口",d:"选中一段内容后出现 AI 操作条，系统可直接把选区作为任务上下文。",u:"针对「选中的具体内容」做即时操作，且操作类型相对固定、可枚举。",h:["浮条紧贴选区上方，不遮住选中内容","只放最高频动作，避免长菜单","跟随选区变化、选区消失即收起","AI 项与普通格式操作做视觉区分"],t:"选区丢失要立刻收起，否则浮条悬空；动作堆多会让浮条变长，失去「轻」的优势。",r:["Notion","Craft","沉浸式翻译"],diff:"上下文精度高于工具栏和导航，默认不占空间；缺点是要先完成「选中内容」这个动作。",avoid:"对象非文字、移动端占比高，或选中内容涉及敏感信息且读取范围无法说明时应避免。",states:["无选区","有效选区","浮条出现","执行中","结果返回","选区丢失"],metrics:["选区触发率","任务完成率","浮条关闭率"],rel:"上下文推荐 · 选区浮条 · 快捷任务 · 命令菜单",trigger:"仅在有效选区时出现，明确只读取所选内容；选区变化或失焦及时收起，执行期间保存原选区引用。",platform:"桌面靠近选区上方显示；移动端依赖系统选区菜单或底部操作条，避免浮层被虚拟键盘遮挡。",a11y:"不只依赖鼠标划选；支持键盘选文后触发。浮条不抢焦点，关闭后焦点回原文。动作写「改写选中内容」等明确文案。"},
+   {e:"🖱️",n:"右键菜单",c:"上下文入口",d:"把 AI 动作放进对象原有的操作路径，适合低频、进阶且依赖具体对象的任务。",u:"进阶用户；需按选中对象类型提供不同的上下文动作时。",h:["AI 项单独分组、带图标，与系统项区隔","遵循系统右键排序与习惯","菜单项随选中对象动态变化"],t:"发现性很低——多数用户不主动右键，必须配合显性入口；移动端无右键，需另设触发。",r:["VS Code","Cursor","Figma"],diff:"几乎不占界面空间，比常驻入口克制；但发现性最低，不能直接照搬到移动端。",avoid:"用户以新手或移动端为主，且无其他显性入口兜底时，不能只依赖右键菜单。",states:["无目标","菜单展开","项目聚焦","当前不可用","执行中","已完成"],metrics:["右键触达率","AI 菜单使用率","无操作关闭率"],rel:"对象操作 · 上下文菜单 · 菜单项 · 分组线",trigger:"用户在明确对象上打开上下文菜单时出现；菜单项随对象类型变化，执行前保留对象引用与选中状态。",platform:"适合桌面鼠标与触控板；移动端提供长按菜单、更多按钮或显性入口，不直接照搬右键。",a11y:"支持 Shift+F10 或菜单键；上下箭头移动、Enter 执行、Esc 返回原对象。AI 动作独立分组并写清作用对象。"},
+   {e:"📍",n:"就近触发",c:"上下文入口",d:"就近入口贴在段落、单元格或卡片旁，让用户直接对当前对象执行 AI 操作。",u:"段落级 / 单元格级 / 卡片级的局部、精细操作。",h:["默认隐藏，hover 到对象才出现","紧贴操作对象、指向明确","克制使用，别给每个元素都挂图标"],t:"图标过多显「吵」；hover 出现对触屏不友好，移动端需另设触发（如长按）。",r:["Notion","Coda","飞书多维表格"],diff:"比工具栏更精确，比划词少一步选择；但对象过多时易产生大量图标与视觉噪音。",avoid:"对象密度很高、每个对象都出图标，或完全依赖触屏且无长按替代时应避免。",states:["隐藏","悬停/聚焦","建议出现","菜单展开","执行中","已忽略"],metrics:["入口曝光率","建议采纳率","重复忽略率"],rel:"上下文推荐 · 行内按钮 · 工具提示 · 弹出菜单",trigger:"悬停、聚焦或选中单个内容对象时出现；入口携带当前对象标识，不默认扩大读取范围。",platform:"桌面对象边缘渐显；移动端改为对象更多按钮、滑动动作或长按菜单，不依赖 hover。",a11y:"对象获键盘焦点时同样显示入口；图标有名称与工具提示，不造成布局跳动。文案写「总结这一段」而非「AI 处理」。"},
+   {e:"⌨️",n:"命令面板",c:"效率入口",d:"快捷键或命令面板让熟练用户不离开键盘就能搜索功能、输入指令并启动 AI 任务。",u:"高频、追求效率的重度用户；功能繁多、不宜全部平铺在界面上的产品。",h:["全局绑定 ⌘K，并显式提示快捷键","支持模糊搜索 + 最近使用 + AI 指令","上下文感知：按当前位置给不同候选","再按一次或 Esc 关闭并归还焦点"],t:"注意与系统/浏览器快捷键冲突（⌘K 在浏览器是地址栏）；纯键盘入口对新手发现性低。",r:["Linear","Superhuman","Raycast","VS Code"],diff:"操作效率最高、承载能力最强，但天然不适合承担首次发现，必须配合看得见的入口。",avoid:"用户不熟悉键盘工作流、命令数很少，或快捷键与系统/浏览器冲突时不必增加学习成本。",states:["关闭","输入聚焦","搜索中","有结果","无结果","正在执行"],metrics:["命令面板使用率","无结果率","键盘完成率"],rel:"快捷任务 · 任务模板 · 搜索框 · 命令列表 · 快捷键提示",trigger:"可见按钮或快捷键打开，默认聚焦搜索框；候选结合当前位置排序，不隐藏全局命令。执行携带当前页面与选择对象。",platform:"桌面适合键盘优先的居中面板；移动端改全屏搜索或底部命令页，不要求记物理键盘快捷键。",a11y:"用对话框与组合框语义；支持上下箭头、Enter、Esc，关闭后焦点归位。持续展示快捷键提示并提供可见入口。"},
+   {e:"🪧",n:"空状态引导",c:"新手入口",d:"空状态入口在用户第一次进入时说明 AI 能做什么，并用可点击示例帮助完成第一个真实任务。",u:"首次进入、空会话，用户不清楚 AI 能力边界、需降低上手门槛时。",h:["一句话说清能力与边界，别堆功能","给 3 条左右可点击示例，降低「不知问什么」","可一键跳过，不强迫","引导过后不再反复强弹"],t:"反复打扰变噪音；示例要贴合真实场景，否则点了不实用反降信任。",r:["ChatGPT","Claude","Notion"],diff:"不是日常任务入口，而是一次性教学入口；完成首次任务或主动跳过后应退出主流程。",avoid:"用户已熟悉产品、示例与角色无关，或教学内容完成后仍长期占据主界面时应避免。",states:["首次进入","示例可选","准备数据","任务进行中","首次成功","已跳过"],metrics:["首次任务发起率","首次任务成功率","新手流程退出率"],rel:"新手与空状态 · 推荐问题 · 引导卡 · 示例按钮",trigger:"仅首次进入、无历史或缺少必要数据时出现；示例点击进入低风险、反馈快的真实任务，完成或跳过后记录状态。",platform:"桌面与移动端均保持首屏可读；移动端减少长说明，优先一条主任务和两三条示例，避免全屏强遮挡。",a11y:"用标准标题、按钮与对话框语义，焦点进出路径完整。说明能力边界，示例用真实业务语言，提供永久跳过。"}],
+  appendix:{matrix:{cols:["可发现性","上下文精度","低干扰","新手友好","移动适配"],rows:[["导航栏按钮",5,1,3,5,5],["悬浮球",5,2,2,4,2],["工具栏图标",3,4,4,3,3],["划词唤起",3,5,5,3,2],["右键菜单",2,5,5,2,1],["命令面板",2,3,5,1,2],["就近触发",3,5,4,3,3],["空状态引导",5,2,3,5,5]]},combos:[["AI Chat","导航入口 → 空状态引导 → 命令面板"],["Copilot","导航兜底 → 工具栏 → 划词 / 就近触发"],["Agent","主入口 → 任务快捷项 → 悬浮状态提醒"]],pitfalls:["同一页面多个功能重复的 AI 入口","只放魔法图标，没有文字/提示/业务动作名","打开 AI 丢失选区与页面上下文","依赖悬停/右键，无移动端与键盘替代","首次引导、红点和动画反复无法永久关闭"],checks:["页面有一个明确的主入口，其他入口承担不同角色","入口使用业务动作名称，不只依赖魔法图标","用户知道 AI 会读取当前页面、选区还是整个项目","入口打开后不丢失选区、附件和任务上下文","默认/聚焦/执行中/不可用/新结果状态均已定义","悬停、右键和快捷键都有移动端或可见入口兜底","所有入口都能通过键盘聚焦、触发和关闭","首次引导可跳过，完成后不反复强制出现","已定义入口点击、任务发起、误触和关闭指标","AI 不可用、权限不足和网络失败时仍有明确说明"]}
+},
+/* —— B 输入设计 —— */
+{ id:"2", title:"2 · 输入设计", lead:"输入设计决定用户如何表达意图、补充上下文，以及系统如何回应发送与生成状态。好的输入不仅要降低表达门槛，还要让用户清楚自己提交了什么。",
+  groups:[["输入框本体","自适应输入框","占位与引导文案","发送与停止态"],["引导式输入","推荐问题","Prompt 模板","快捷指令"],["输入增强","附件与多模态","语音输入"],["多模态上下文","上下文挂载"]],
+  patterns:[
+   {e:"📐",n:"自适应输入框",c:"输入框本体",d:"输入框随内容自动长高，到上限再内部滚动。既不挤占空白版面，又能容纳长 Prompt。",
+    u:"几乎所有对话式 AI 的主输入框。",
+    h:["空时单行，随换行自动增高","到最大高度后内部滚动，不无限撑开","回车发送 / Shift+回车换行，行为可预期","移动端注意键盘遮挡"],
+    t:"自动增高若不设上限会把上方消息区挤没；必须配最大高度 + 内部滚动。",
+    r:["ChatGPT","Claude","文心一言"]},
+   {e:"💬",n:"占位与引导文案",c:"输入框本体",d:"空输入框里的一句话直接决定用户敢不敢开口。给「可照着改的具体例子」而非「请输入…」。",
+    u:"输入框空状态、首次使用、切换工作场景时。",
+    h:["给具体示例而非「请输入问题」","贴合当前场景（文档里 vs 数据表里）","简短，一眼读完","别把说明书塞进占位文案"],
+    t:"占位文案开始输入就消失，不能承载关键信息；塞太长没人读。",
+    r:["ChatGPT","Notion AI","Perplexity"]},
+   {e:"📤",n:"发送与停止态",c:"输入框本体",d:"发送按钮清楚表达三种状态：不可发 / 可发 / 生成中可停止。「能否立刻停」是 AI 输入的关键体验。",
+    u:"所有会「流式生成」的 AI 对话。",
+    h:["空内容禁用、有内容高亮","生成中变为「停止」，可中断","发送后清空或保留以便重试","给键盘快捷键（⌘↵）"],
+    t:"生成中若不能停止，长回答只能干等，非常挫败。",
+    r:["ChatGPT","Claude","Gemini"]},
+   {e:"💡",n:"推荐问题",c:"引导式输入",d:"在空状态给几条可点击推荐问题，一键填入，解决冷启动「不知道问什么」。",
+    u:"空会话、首屏，以及每轮回答后的「继续追问」。",
+    h:["首屏推荐与追问推荐内容不同","点击可直接填入或发送","数量克制（3 条左右）","结合当前上下文动态生成"],
+    t:"推荐不贴合真实意图会沦摆设甚至干扰。",
+    r:["ChatGPT","Perplexity","豆包"]},
+   {e:"🧩",n:"Prompt 模板",c:"引导式输入",d:"把高频任务做成可填空模板，替换【】里的变量即可。降低 Prompt 门槛、保证输出稳定。",
+    u:"任务相对固定、可标准化的场景（改写、翻译、生成大纲）。",
+    h:["用【】清晰标记可填空位","按场景分组的模板库","可保存复用自定义模板","填空后给出可继续编辑的完整 Prompt"],
+    t:"模板太死会限制表达；要允许用户自由修改。",
+    r:["扣子 Coze","Notion AI","FlowGPT"]},
+   {e:"⚡",n:"快捷指令 /",c:"引导式输入",d:"在输入框打 / 唤起命令菜单，把高频动作变成可搜索指令，省去打描述。",
+    u:"高频、可枚举的固定动作。",
+    h:["/ 唤起、支持继续输入搜索","命令分组 + 图标，易扫读","选中后可附带参数","与普通输入无缝切换"],
+    t:"指令藏在 / 里发现性低，需在界面引导用户知道这个用法。",
+    r:["Notion","飞书","Linear"]},
+   {e:"📎",n:"附件与多模态",c:"输入增强",d:"让用户上传文件、图片、表格作为提问对象，把 AI 从「只懂文字」扩展到「能看材料」。",
+    u:"需要 AI 基于用户具体材料作答（看截图、读文档、分析表格）。",
+    h:["支持拖拽 / 粘贴 / 点击上传","上传中、成功、失败都有状态","图片缩略图、文件类型图标","可单独删除某个附件"],
+    t:"大文件要管好上传反馈与体积限制，避免「无声失败」。",
+    r:["ChatGPT","Claude","通义千问"]},
+   {e:"🎤",n:"语音输入",c:"输入增强",d:"按住或点击说话实时转写。波形 + 实时转写让用户确认「它听对了」。",
+    u:"移动端、不方便打字或口述更快的场景。",
+    h:["录音时给波形 / 音量反馈","实时转写，边说边出字","可暂停 / 取消 / 重录","开始与结束态明确"],
+    t:"嘈杂环境识别差，必须给「转写不准可直接编辑」的退路。",
+    r:["通义听悟","ChatGPT 语音","飞书妙记"]},
+   {e:"📌",n:"上下文挂载",c:"多模态上下文",d:"把「AI 正在参考什么」做成可见、可移除的上下文标签。让用户清楚 AI 看到了哪些材料。",
+    u:"AI 答案依赖特定资料，且用户需要掌控参考范围时。",
+    h:["用标签显式展示已挂载上下文","每个上下文可单独移除","区分「自动带入」与「手动添加」","也让用户知道 AI 看不到什么"],
+    t:"上下文不可见会不信任也无法纠偏；标签太多同样喧宾夺主。",
+    r:["Cursor","Notion AI","飞书"]}
+  ],
+  appendix:{matrix:{cols:["表达门槛低","任务确定","自带上下文","移动适配","实现成本低"],rows:[["直接打字",5,2,1,5,5],["推荐问题",5,3,2,4,5],["Prompt 模板",3,5,1,3,3],["快捷指令 /",3,5,2,4,5],["附件上传",2,4,5,4,3],["语音输入",5,3,1,5,2],["上下文挂载",3,3,5,3,3]]},combos:[["通用助手","直接打字 + 推荐问题 + 附件上传"],["效率工具","快捷指令 / + 自适应输入框 + 上下文挂载"],["移动优先","语音输入 + 推荐问题 + 快捷指令"]],pitfalls:["占位文案塞成说明书，用户一眼看不完","发送后立即清空输入不留重试，误发只能重打","只有打字一种入口，冷启动用户不知能问什么","快捷指令只靠 / 隐藏入口，没有界面引导用户发现","上传附件无进度/失败无声，用户以为没传上","语音转写错误无编辑退路，用户只能整句重说"],checks:["主输入框支持自适应增高与回车/换行双行为","空状态占位给可照着改的具体示例","发送按钮清楚表达 空禁/可发/生成中可停止 三态","空会话与追问阶段各配 3 条左右可点推荐","高频任务有可填空 Prompt 模板或快捷指令","附件/多模态上传有进行、成功、失败三种状态","语音输入有波形反馈、实时转写与可编辑退路","AI 参考的上下文可见且可移除，用户能掌控范围","输入类功能都有键盘可达与移动端等价操作","已定义输入完成、发送、取消与纠错指标"]}
+},
+/* —— C 过程设计 —— */
+{ id:"3", title:"3 · 过程设计", lead:"过程设计决定用户在等待 AI 时能否看懂当前进度、知道系统正在做什么，并随时暂停或继续。好的过程反馈要透明、连续、可控。",
+  groups:[["等待状态","骨架占位","等待提示"],["思考过程可视","步骤展示","工具调用","阶段进度"],["流式输出","流式输出"],["过程可控","停止生成","重新生成","超时降级"]],
+  patterns:[
+   {e:"🧱",n:"骨架占位",c:"等待状态",d:"在内容到达前先用灰色占位块勾勒大致结构，避免布局跳动、让等待显得更短。",
+    u:"结果有固定结构（卡片、列表、表格），且加载需要一点时间时。",
+    h:["用与真实内容相近的形状","微光动画暗示「加载中」","占位别太久，超时应转进度","结构完全不确定时慎用"],
+    t:"骨架与真实内容差太多会「跳变」；不适合完全不可预测的输出。",
+    r:["飞书","LinkedIn","ChatGPT"]},
+   {e:"💭",n:"等待提示",c:"等待状态",d:"用一句会变化的文案告诉用户「我在干嘛」，比干等转圈更能降低焦虑。",
+    u:"思考耗时较长、暂无流式输出内容时。",
+    h:["文案具体、和当前任务相关","轮换推进，体现「在往前走」","配合呼吸点 / 闪烁光标","别用假进度欺骗用户"],
+    t:"文案与实际进度脱节显敷衍；轮换太快像乱跳。",
+    r:["ChatGPT","Claude","Perplexity"]},
+   {e:"🧠",n:"步骤展示",c:"思考过程可视",d:"把 AI 的思考拆成可见步骤（检索→推理→生成），默认可收起。过程透明是建立信任的核心。",
+    u:"多步推理、Agent 任务、需让用户理解「它做了什么」时。",
+    h:["步骤用动词命名，状态清晰（进行中/完成）","默认收起避免刷屏","可展开看细节","与最终答案视觉分离"],
+    t:"步骤过多会淹没答案；过程不等于答案，别让用户被绕晕。",
+    r:["Perplexity","ChatGPT","Claude"]},
+   {e:"🛠️",n:"工具调用",c:"思考过程可视",d:"AI 调用外部工具时显式告诉用户「正在调用什么、返回了什么」，让行为可追溯。",
+    u:"Agent / RAG / 联网检索等会调用工具的场景。",
+    h:["显示工具名与用途","调用中→成功/失败状态","返回结果可点开核对","失败给出原因与重试"],
+    t:"工具调用刷屏会吵；关键让用户看懂「去查了什么」，而非堆日志。",
+    r:["Perplexity","扣子 Coze","Cursor"]},
+   {e:"📊",n:"阶段进度",c:"思考过程可视",d:"对长任务用进度条 + 阶段标签给「还要多久、走到哪」的预期。",
+    u:"生成长文档、批量处理、深度研究等明确分阶段的长任务。",
+    h:["有真实进度优先，没有就给阶段名","阶段标签具体可读","给可预期的「还剩多少」","完成有明确反馈"],
+    t:"假进度条（卡 99%）严重损害信任；无法估时就别硬塞百分比。",
+    r:["Perplexity","Gamma","NotebookLM"]},
+   {e:"🌊",n:"流式输出",c:"流式输出",d:"回答逐字/逐词流式吐出而非憋完一次弹出，把首字延迟变成体感上的「立刻响应」。",
+    u:"几乎所有生成式回答的默认呈现方式。",
+    h:["首字尽快出（TTFT）比总速度重要","流式中滚动跟随光标","代码/表格边出边渲染","结束有明确「完成」态"],
+    t:"滚动跟随别和用户手动滚动打架；结构化内容处理好「半成品」渲染。",
+    r:["ChatGPT","Claude","Gemini"]},
+   {e:"🛑",n:"停止生成",c:"过程可控",d:"生成中提供随时可点的「停止」按钮，「能立刻喊停」是 AI 体验的安全感来源。",
+    u:"所有流式 / 长时间生成的回答。",
+    h:["停止按钮生成中始终可见","停止后保留已生成的部分","停止≠删除，可基于半成品继续","给键盘快捷键"],
+    t:"停止后清掉已生成内容会让用户白等；务必保留。",
+    r:["ChatGPT","Claude","Gemini"]},
+   {e:"🔄",n:"重新生成",c:"过程可控",d:"回答结束后给「重新生成、换个说法、继续」等动作，让用户低成本纠偏而非重打 Prompt。",
+    u:"回答完成后的常规操作区。",
+    h:["重新生成/换风格/继续写等并列","可对比多次生成结果","配合赞踩收集反馈","一键复制/导出"],
+    t:"动作太多会让答案区变乱；放最高频几个即可。",
+    r:["ChatGPT","Claude","Gemini"]},
+   {e:"⏳",n:"超时降级",c:"过程可控",d:"请求超时或繁忙时给出清晰失败说明 + 可执行下一步，而非无声转圈或冷报错。",
+    u:"网络不稳、模型繁忙、长任务可能失败场景。",
+    h:["说清发生了什么（超时/繁忙/限流）","给重试与降级选项","可自动降级到更快/更稳模型","保留用户已输入内容"],
+    t:"无声失败最伤信任；报错也要给出路而非死胡同。",
+    r:["ChatGPT","Claude","通义千问"]}
+  ],
+  appendix:{matrix:{cols:["骨架占位","等待提示","阶段进度","流式输出","可停止"],rows:[["<1s 即时返回",1,2,1,3,2],["1-3s 短等待",4,4,2,3,2],["3-10s 中等待",3,5,3,4,3],[">10s 长任务",2,3,5,4,4],["可中断型生成",2,2,4,5,5]]},combos:[["轻量问答","骨架占位 + 流式输出 + 可停止"],["Agent 长任务","阶段进度 + 工具调用 + 停止生成"],["高并发兜底","等待提示 + 超时降级 + 重新生成"]],pitfalls:["长时间等待只转圈，不给进度或可预期时间","假进度条（无真实进度却匀速走）透支信任","流式输出不能停止，长回复只能干等","任务出错无声静默，用户不知是否在跑","停止/重试入口与状态不联动，点了没反应"],checks:["每个等待都匹配 时长×反馈 组合而非一刀切转圈","阶段/步骤类进度有真实对应而非假动画","流式输出清晰标识生成中，随时可停止","停止后保留已生成内容，可继续或重新生成","超时/失败/限流都说明原因并给重试或降级出路","工具调用等后台行为可见状态且可点开核对","等待相关交互可用键盘打断/取消","已定义等待时长、打断率、重试率与超时指标"]}
+},
+/* —— D 输出设计 —— */
+{ id:"4", title:"4 · 输出设计", lead:"输出设计决定 AI 的答案如何被阅读、核验和继续使用。好的输出不只结构清晰，还要提供来源、操作与后续行动。",
+  groups:[["富内容输出","代码块","表格","图表/可视化","卡片化结果"],["溯源与引用","来源标注与核对","置信度/不确定提示"],["消息级操作","消息级操作","选段追问"],["对话布局","分栏工作区 Artifacts"]],
+  patterns:[
+   {e:"⌨️",n:"代码块",c:"富内容输出",d:"把代码用等宽字体 + 语法高亮单独成块，提供一键复制/运行。对开发场景，能否直接拿走用决定 AI 实用度。",
+    u:"输出代码、配置、命令行等技术内容。",
+    h:["语法高亮 + 行号","一键复制、可运行","标注语言类型","长代码可折叠 / 横向滚动"],
+    t:"别把代码混在正文里；复制要复制纯代码不带格式。",
+    r:["ChatGPT","Claude","Cursor"]},
+   {e:"🧮",n:"表格",c:"富内容输出",d:"结构化数据用表格呈现，支持排序、导出，让用户能二次操作而非只看静态结果。",
+    u:"对比、统计、清单类结构化数据。",
+    h:["表头可排序","可导出 CSV / Excel","关键列高亮","大表分页或横向滚动"],
+    t:"列太多在窄屏会挤；移动端考虑卡片化降级。",
+    r:["ChatGPT","通义千问","飞书多维表格"]},
+   {e:"📊",n:"图表/可视化",c:"富内容输出",d:"趋势、占比等用图表比文字直观，但要标注坐标、单位与数据来源让图可读可核对。",
+    u:"趋势、分布、对比等适合可视化的数据。",
+    h:["选对图型（趋势折线、占比饼）","标注坐标与单位","可在图/表间切换","数据可下钻或导出"],
+    t:"花哨图型反而难读；数据不准的「漂亮图」危害更大。",
+    r:["ChatGPT 数据分析","Julius AI","通义千问"]},
+   {e:"🃏",n:"卡片化结果",c:"富内容输出",d:"把结构化结论拆成信息卡（关键指标、要点、对象），比一大段文字更易扫读、易复用。",
+    u:"指标汇总、实体信息、可对比的并列结果。",
+    h:["一卡一主题、关键数字突出","卡内可带操作","网格排布、可点开详情","与正文视觉区分"],
+    t:"卡片不是越多越好；过度碎片化会丢失叙事。",
+    r:["Perplexity","豆包","Notion AI"]},
+   {e:"🔗",n:"来源标注与核对",c:"溯源与引用",d:"给结论标注来源角标 [1][2]，可点开核对原文。可溯源是 B 端最看重的能力。",
+    u:"基于知识库/文档/联网检索的回答，尤其 B 端决策场景。",
+    h:["行内角标 + 来源清单","点开定位到原文片段","区分「有依据」与「模型推测」","来源可跳转"],
+    t:"标了来源却点不开=假溯源；来源与结论对不上更伤信任。",
+    r:["Perplexity","NotebookLM","ChatGPT 搜索"]},
+   {e:"🎯",n:"置信度/不确定提示",c:"溯源与引用",d:"AI 不确定时显式给出置信度或「可能已过时/需核实」提示，而非用笃定语气说错。",
+    u:"结论可能不准、数据时效性存疑或推测性回答。",
+    h:["用标签/措辞表达把握程度","标注数据时间与范围","不确定时主动反问/给替代","高风险结论提醒人工复核"],
+    t:"滥用「仅供参考」会成免责套话；要具体说明哪里不确定。",
+    r:["Claude","Perplexity","通义千问"]},
+   {e:"⚙️",n:"消息级操作",c:"消息级操作",d:"每条回答下提供复制、赞踩、重试、引用追问、导出等，让用户低成本复用、纠偏、反馈。",
+    u:"所有 AI 回答的常规操作区。",
+    h:["高频操作直出、其余收「更多」","赞踩要能填原因","复制/导出保留格式","hover 才显，保持干净"],
+    t:"操作堆多喧宾夺主；赞踩无后续改进则用户停止反馈。",
+    r:["ChatGPT","Claude","Gemini"]},
+   {e:"✂️",n:"选段追问",c:"消息级操作",d:"选中回答里的一段话就近浮出「针对这段追问/解释/改写」，把追问锚定到具体内容。",
+    u:"长回答里针对某一句/某一段的深入或澄清。",
+    h:["选中即浮出、紧贴选区","把选段作为追问上下文","操作精简（追问/解释/改写）","与划词输入手感一致"],
+    t:"不能遮住选区；与浏览器原生选择菜单的冲突要处理。",
+    r:["ChatGPT","Claude","Notion AI"]},
+   {e:"🪟",n:"分栏工作区 Artifacts",c:"对话布局",d:"把篇幅长、需反复编辑的产物从对话流抽出，放右侧独立持久工作区。对话沟通、工作区承载成果。",
+    u:"生成长文档/代码/可交互产物，需边对话边迭代时。",
+    h:["对话与产物分栏、互不打断","产物可版本化、可编辑","对话里可引用产物某处","可全屏/收起"],
+    t:"不是所有回答都该进工作区；短回答进去反而增跳转成本。",
+    r:["Claude Artifacts","ChatGPT Canvas","Gamma"]}
+  ],
+  appendix:{matrix:{cols:["代码","表格/结构化","图表/趋势","长文/富内容","需编辑产物"],rows:[["代码块",5,1,1,3,4],["表格",1,5,2,3,3],["图表/可视化",1,2,5,2,3],["卡片化结果",2,3,2,4,3],["来源标注与核对",3,3,2,4,2],["分栏工作区 Artifacts",4,3,2,4,5]]},combos:[["开发者助手","代码块 + 分栏 Artifacts + 来源标注"],["数据问答","表格 + 图表可视化 + 卡片化结果"],["研究总结","来源标注 + 置信度提示 + 选段追问"]],pitfalls:["所有回答一律长文，结构化信息埋没难扫读","给代码/表格却不允许复制或就地编辑","结论不给来源/置信度，用户无法核对","能进分栏工作区的长内容却塞在消息里","可操作结果（表格/代码）没有导出或继续使用入口"],checks:["输出按内容性质选择代码块/表格/图表/卡片/工作区","富内容可复制、可导出或就地编辑","引用/结论带可点开的来源与置信度","消息级操作（改写/解释/翻译/追问）随手可达","长/复杂产物用分栏工作区而非压进对话流","结果可编辑，区分 AI 生成与用户改动","已定义结果采用率、复制率、追问率与来源点击率"]}
+},
+/* —— E 角色设计 —— */
+{ id:"5", title:"5 · 角色设计", lead:"形象与人格设计决定用户如何理解 AI 的角色、能力边界与表达方式。好的形象应一致、克制，并服务于任务而不是抢夺注意力。",
+  groups:[["视觉形象","头像形态","多端尺寸适配"],["动效与情绪","状态动效","情绪与克制"],["语气与人格","语气标尺","称呼与人称","边界感/不过度承诺","拒答话术"],["命名与品牌","命名与记忆点"]],
+  patterns:[
+   {e:"🎭",n:"头像形态",c:"视觉形象",d:"AI 的「脸」有四条路线：抽象光点、几何标记、拟人吉祥物、字母缩写。它传达调性也设定预期。",
+    u:"任何需要给 AI 可识别「身份」的产品。",
+    h:["风格与品牌调性一致","小尺寸下仍可辨识","避免与系统/竞品雷同","留出做状态动效的余地"],
+    t:"B 端慎用强拟人吉祥物，易显不专业、不可信。",
+    r:["Claude","ChatGPT","微软 Copilot"]},
+   {e:"📱",n:"多端尺寸适配",c:"视觉形象",d:"同一形象要在 56px 头像、24px 列表、16px 角标下都清晰，越小越要简化。",
+    u:"形象出现在导航、列表、消息、通知等多处时。",
+    h:["大尺寸可有细节，小尺寸做简化版","保持识别特征不变","备好单色/反白版本","留足安全边距"],
+    t:"直接缩放复杂图形会糊；需要专门的小尺寸版本。",
+    r:["微软 Copilot","ChatGPT","飞书"]},
+   {e:"✨",n:"状态动效",c:"动效与情绪",d:"用形象动效表达状态：待命(呼吸)、思考(脉冲)、说话(轻跳)、完成、出错(抖动)。是「它活着」的信号。",
+    u:"几乎所有有 AI 形象的产品，尤其体现「正在工作」时。",
+    h:["每个状态有可区分的动效","待命态低调不抢注意","出错态克制别夸张","与加载/过程设计联动"],
+    t:"动效过度显浮夸耗性能；B 端尤其要克制。",
+    r:["ChatGPT","Claude","豆包"]},
+   {e:"🌡",n:"情绪与克制",c:"动效与情绪",d:"拟人程度是把双刃剑。C 端可活泼有情绪；B 端要克制专业少卖萌。过度拟人让用户在严肃场景不敢信任。",
+    u:"决定 AI 性格浓淡——按受众与场景严肃度调。",
+    h:["按场景定拟人刻度","B 端专业克制 / C 端亲和有温度","情绪服务于任务而非表演","保持一致别忽冷忽热"],
+    t:"在财务/医疗/法务高风险场景卖萌会严重损害可信度。",
+    r:["微软 Copilot","Character.AI","豆包"]},
+   {e:"🎚",n:"语气标尺",c:"语气与人格",d:"同一意思可专业可亲和。把语气当可调的尺，按品牌场景定位并全程一致。",
+    u:"定义产品 Tone of Voice、撰写所有 AI 文案时。",
+    h:["定一个语气基准（专业↔亲和）","全产品一致","信息优先清楚再谈风格","给可参考的语气样例"],
+    t:"语气飘忽让用户摸不清「它是谁」；过度亲和稀释专业感。",
+    r:["Claude","ChatGPT","豆包"]},
+   {e:"🫱",n:"称呼与人称",c:"语气与人格",d:"「你/您」「我/小助手」直接塑造距离感，定下 AI 与用户的关系。",
+    u:"所有面向用户的文案，B 端尤其讲究称呼分寸。",
+    h:["统一人称别混用","B 端多用「您」显尊重（看行业）","自称简洁别过度拟人","跨语言重新校准"],
+    t:"中英混排、「你/您」混用显不专业；过度自称名字易腻。",
+    r:["通义千问","豆包","Kimi"]},
+   {e:"🚧",n:"边界感/不过度承诺",c:"语气与人格",d:"好的人格懂不越界不打包票。把话说满会埋雷；诚实标能力边界反而更可信。",
+    u:"涉及准确性、合规、风险的所有回答。",
+    h:["不对不确定的事打包票","主动说明能力边界","高风险结论提示人工复核","用词留余地但不含糊"],
+    t:"过度承诺出错信任崩塌；全是免责又显没用。",
+    r:["Claude","ChatGPT","Gemini"]},
+   {e:"🙅",n:"拒答话术",c:"语气与人格",d:"拒绝也是人格。冷冰冰「无法处理」激怒用户；好的拒答解释原因 + 给替代路径。",
+    u:"能力外、超权限、违规、信息不足等需拒绝/澄清时。",
+    h:["说清为什么不能做","给可行的替代或下一步","语气尊重不说教","信息不足反问而非硬拒"],
+    t:"一句「我做不到」是死胡同；过度道歉啰嗦也烦人。",
+    r:["Claude","ChatGPT","Gemini"]},
+   {e:"🏷",n:"命名与记忆点",c:"命名与品牌",d:"名字是 AI 形象的第一记忆点。好名字简短好读有记忆点且契合调性。",
+    u:"给 AI 助手起名、做品牌定位时。",
+    h:["简短好读易传播","暗示定位或能力（如 Copilot=副驾）","与主品牌关系清晰","多语言下不别扭"],
+    t:"生僻难读易混淆传播成本高；蹭热点名字易过时。",
+    r:["Kimi","通义千问","文心一言"]}
+  ],
+  appendix:{matrix:{cols:["拟人化低","拟人化中","拟人化高","明显情绪","自称/呼人称"],rows:[["高严肃(B端财务/医疗)",5,3,1,1,"AI 助手"],["中严肃(工作协作/效率)",4,4,2,2,"助手/名称"],["轻量(C端内容/娱乐)",2,4,4,3,"活泼名"],["陪伴/聊天向",1,3,5,4,"朋友式称呼"]]},combos:[["专业工具","克制语气 + 规范称呼 + 边界感"],["日常助手","适中语气 + 记忆点命名 + 状态动效"],["娱乐陪伴","高拟人 + 明显情绪 + 亲昵称呼"]],pitfalls:["正经工具配过度卖萌人格，用户觉得不专业","到处自称「我是」却不给边界，过度承诺被当真","语气/称呼前后不一致，人格形象摇摆","动效和情绪抢戏，干扰任务信息本身","拒答/边界话术生硬，用户觉得被敷衍或冒犯"],checks:["人格浓淡匹配目标受众与场景严肃度","有既定语气基准并全产品一致","头像/多端形象适配各尺寸与深浅主题","情绪动效克制、服务于状态而非装饰","拒答与边界说明清楚、不卑不亢","命名易读易记、暗示定位且不越界","自称与人称有明确规则并遵守","已定义拟人度接受度、拒答满意度指标"]}
+},
+/* —— F 异常设计 —— */
+{ id:"6", title:"6 · 异常设计", lead:"异常与反馈设计决定 AI 出错、无结果或信息不足时如何解释问题并提供下一步。好的异常反馈要说清原因、保留结果，并给用户出路。",
+  groups:[["错误处理","生成失败·重试","限流·额度用尽","内容安全拦截"],["空与兜底","无结果·查不到","信息不足·反问澄清","部分成功"],["安全边界","AI 生成标识·免责","安全与合规提示"],["用户纠错","错误反馈·闭环"]],
+  patterns:[
+   {e:"⚠️",n:"生成失败·重试",c:"错误处理",d:"回答中途失败时给出能看懂的错误 + 直接可点的下一步，并保留用户提问。技术错误码该藏，人话该露。",
+    u:"网络中断、服务报错、生成被打断等技术性失败。",
+    h:["说人话别甩原始错误码","提供「重试」直接可点","保留用户输入别让重打","复杂错误给「复制错误码」"],
+    t:"一句「出错了」没下一步=死胡同；堆一屏堆栈用户也看不懂。",
+    r:["ChatGPT","Claude","Gemini"]},
+   {e:"⏳",n:"限流·额度用尽",c:"错误处理",d:"触发限流或额度尽时要说清「为什么停、何时恢复、怎么继续」。",
+    u:"免费额度用尽、调用频率超限、并发受限等。",
+    h:["说明何时自动恢复","给升级/充值等继续路径","展示当前用量可预期","区分临时限流与额度耗尽"],
+    t:"只说「请求频繁」不给恢复时间，用户会反复重试更焦虑。",
+    r:["ChatGPT","Claude","通义千问"]},
+   {e:"🛡",n:"内容安全拦截",c:"错误处理",d:"请求触碰安全红线要克制尊重地说明无法协助并留申诉出口，不能照做也不能说教羞辱。",
+    u:"涉及违规、敏感、越权等被安全策略拦截的请求。",
+    h:["平静说明无法协助不说教","简述触发哪类政策","给误判反馈/申诉出口","别透露可绕过的拦截细节"],
+    t:"冷硬「违规」激怒正常用户；但也不能全暴露拦截规则。",
+    r:["Claude","ChatGPT","Gemini"]},
+   {e:"🔍",n:"无结果·查不到",c:"空与兜底",d:"查不到时别说「无结果」了事。说清为什么没有、给替代路径，不留死胡同。",
+    u:"知识库/检索/数据查询返回空时。",
+    h:["说明查什么、为何为空","给可点的替代动作","建议放宽/修改条件","别让用户对空白发呆"],
+    t:"空状态高频却最易被忽略；敷衍空页直接劝退。",
+    r:["Perplexity","NotebookLM","ChatGPT"]},
+   {e:"❓",n:"信息不足·反问澄清",c:"空与兜底",d:"指令含糊信息不足时主动反问澄清而非凭空乱猜，好反问比错误答案有用。",
+    u:"意图模糊、缺关键参数、可能有多种理解时。",
+    h:["指出哪里不清楚","给可点的候选选项","一次只问最关键的","别为反问而反问"],
+    t:"乱猜给错结果；每次都反问又显笨打断节奏。",
+    r:["Claude","ChatGPT","Perplexity"]},
+   {e:"🌓",n:"部分成功",c:"空与兜底",d:"多步任务部分失败时区分成功/失败，让失败项单独重试，别一步失败整体报错白做前面。",
+    u:"多步骤/批量任务可能部分成功部分失败。",
+    h:["逐项展示成功/失败状态","成功结果先保留可用","失败项可单独重试","汇总「N 成功 M 失败」"],
+    t:"一步失败整体回滚浪费已完成工作、激怒用户。",
+    r:["ChatGPT","Claude","扣子 Coze"]},
+   {e:"✨",n:"AI 生成标识·免责",c:"安全边界",d:"AI 生成内容明确标「AI 生成」并附简短免责，提醒可能有误、重要决策需人工核实。",
+    u:"所有 AI 生成的结论、文案、图像，尤其对外或决策用途。",
+    h:["清晰不打扰的「AI 生成」标","一句话免责别长篇","高风险结论加重提醒","可追溯生成时间/模型"],
+    t:"标识太弱起不到提示；太重让用户不信任产品。",
+    r:["微软 Copilot","Gemini","抖音"]},
+   {e:"🔒",n:"安全与合规提示",c:"安全边界",d:"涉及敏感数据/隐私时主动告知「数据怎么被处理、用在哪、是否脱敏」。B 端最在意数据安全合规。",
+    u:"上传含敏感信息的文件、处理个人隐私/企业机密时。",
+    h:["提示检测到的敏感内容","说明脱敏/加密等处理","声明数据用途与留存","给数据政策入口"],
+    t:"含糊「我们重视隐私」没用；要具体说做了什么处理。",
+    r:["微软 Copilot","飞书","Claude"]},
+   {e:"💬",n:"错误反馈·闭环",c:"用户纠错",d:"给用户低成本纠错入口（赞踩/举报/纠正），并让反馈有「被收到」的闭环感。",
+    u:"每条 AI 回答之后的常规反馈区。",
+    h:["赞踩/举报随手可达","踩后追问具体原因","给「已收到」即时回执","严重问题给人工跟进通道"],
+    t:"只收集不回应用户停止反馈；反馈表单太长没人填。",
+    r:["ChatGPT","Claude","Gemini"]}
+  ],
+  appendix:{matrix:{cols:["说明原因","保留输入","给重试/出路","内容安全提示","错误反馈闭环"],rows:[["生成失败/超时",5,5,5,1,3],["限流/额度用尽",5,4,3,1,2],["内容安全拦截",4,2,2,5,3],["无结果/查不到",4,3,4,1,2],["信息不足需澄清",4,5,3,1,2],["部分成功",4,5,4,1,4]]},combos:[["失败兜底","生成失败重试 + 保留输入 + 无结果引导"],["安全边界","内容安全拦截 + AI 标识免责 + 合规提示"],["信任构建","错误反馈闭环 + 部分成功明示 + 无结果澄清"]],pitfalls:["只报「出错了」不给原因和下一步","失败/超时时清空用户已输入内容","限流/额度只说用尽不给升级或重试","无结果直接空白，不给搜索建议或改写问法","AI 生成内容不标注，误导用户当作事实","反馈收集了却不回应，用户觉得石沉大海"],checks:["每种异常都说清发生了什么与为什么","失败/超时保留用户输入并可重试或降级","AI 生成内容有标识与免责提示","无结果/信息不足给澄清、建议或改写方向","部分成功明确哪些已做哪些没做","安全拦截给原因与合规申诉/修改路径","赞踩等反馈有即时回执并可见后续","已定义失败率、重试率、无结果率与反馈响应率"]}
+},
+/* —— G 信任设计 —— */
+{ id:"7", title:"7 · 信任设计", lead:"信任与控制设计决定用户能否理解 AI 的权限、确认关键操作并追溯结果。好的控制机制让 AI 提方案，也始终让人能够拍板、撤销和核查。",
+  groups:[["执行控制","人工确认 HITL","自动化档位","可撤销·回滚"],["结果掌控","结果可编辑","操作影响预览"],["权限与数据","权限边界","记忆可见可清除"],["审计溯源","审计日志","决策溯源"]],
+  patterns:[
+   {e:"✋",n:"人工确认 HITL",c:"执行控制",d:"AI 执行高风险/不可逆操作前必须停下等人确认（Human-in-the-loop）。让 AI 提方案、人来拍板。",
+    u:"删除、付款、驳回、发送、改配置等有真实后果的操作。",
+    h:["执行前说明「要做什么、影响多大」","默认不自动执行高风险动作","提供批准/修改/拒绝三选","低风险动作可豁免别处处打断"],
+    t:"什么都要确认没人用；什么都不确认不敢用。关键在分级。",
+    r:["Cursor","Claude","Manus"]},
+   {e:"🎛",n:"自动化档位",c:"执行控制",d:"让用户自己选 AI 自主程度：副驾/人审/自主。新手用人审更安心，老手用自主更高效。",
+    u:"能执行操作的 Agent，面向不同信任度/熟练度用户。",
+    h:["档位含义说清可随时切换","默认从保守档位起步","高风险动作即使自主也兜底","切换后行为立刻可感知"],
+    t:"档位太多让人迷惑；3 档（副驾/人审/自主）通常够用。",
+    r:["Cursor","GitHub Copilot","Manus"]},
+   {e:"↩️",n:"可撤销·回滚",c:"执行控制",d:"AI 执行后给反悔机会——撤销、回滚。能撤销让用户敢于放手让 AI 做。",
+    u:"AI 执行了操作、但用户可能想反悔的场景。",
+    h:["执行后显眼处给「撤销」","留撤销时间窗或永久可回滚","撤销要真的恢复原状","批量操作支持整体回滚"],
+    t:"不可逆操作必须在执行前确认（HITL），光靠事后撤销不够。",
+    r:["Gmail 撤回发送","Notion","Figma"]},
+   {e:"✏️",n:"结果可编辑",c:"结果掌控",d:"AI 的产出是草稿而非定论，用户可直接改。把「AI 生成+人工微调」做顺比推倒重来高效。",
+    u:"AI 起草的文案、理由、配置等需人最终把关的内容。",
+    h:["结果就地编辑无需复制出去","区分 AI 生成与你改过","改完一键采用/保存","保留重新生成的退路"],
+    t:"只读 AI 结果逼用户复制到别处改，体验割裂。",
+    r:["ChatGPT Canvas","Claude Artifacts","Notion AI"]},
+   {e:"👁️",n:"操作影响预览",c:"结果掌控",d:"执行前先告诉用户影响范围和大小（dry-run），让人心里有数再确认，避免误触大面积后果。",
+    u:"批量操作、会波及多人/多数据的动作。",
+    h:["量化影响：多少条/多少人/多少钱","高亮不可逆的部分","可展开受影响明细","与人工确认配合使用"],
+    t:"影响说不清让人盲点确认等于没保护。",
+    r:["Cursor","Zapier","GitHub Copilot"]},
+   {e:"🔑",n:"权限边界",c:"权限与数据",d:"AI 能力受用户角色/数据权限约束，越权要被拦下并给合规出口。AI 不能成为绕过权限的后门。",
+    u:"多角色、有审批权限分级的 B 端系统。",
+    h:["AI 操作沿用用户既有权限","越权时说明缺什么权限","给申请/转交等合规路径","AI 看不到无权访问的数据"],
+    t:"若 AI 能做用户没权限的事，就是重大安全漏洞。",
+    r:["飞书","微软 Copilot","钉钉"]},
+   {e:"🧩",n:"记忆可见可清除",c:"权限与数据",d:"AI 记住了什么应对用户可见且能逐条删除。让用户掌控自己数据是信任基础。",
+    u:"有长期记忆/个性化的 AI 产品。",
+    h:["集中展示已记住内容","每条可单独删除","支持一键清空","新增记忆时告知用户"],
+    t:"偷偷记忆不可删除=隐私黑箱，引发信任危机。",
+    r:["ChatGPT","Claude","豆包"]},
+   {e:"📜",n:"审计日志",c:"审计溯源",d:"谁、何时、让 AI 做了什么都要留痕可查。审计日志是 B 端合规与追责刚需。",
+    u:"有合规要求、多人协作、AI 可执行操作的 B 端系统。",
+    h:["记录操作人/时间/动作/对象","人审与 AI 执行都留痕","日志可检索可导出","关键操作不可篡改"],
+    t:"只记 AI 不记人、日志能被改，审计就失去意义。",
+    r:["微软 Copilot","飞书","钉钉"]},
+   {e:"🔎",n:"决策溯源",c:"审计溯源",d:"AI 的判断/决策要能追溯到依据（规则、数据、历史），让决定从黑箱变可复核。",
+    u:"AI 做判定/打分/决策、且结论需被复核时。",
+    h:["每个结论可展开看依据","区分规则、数据、模型推测","依据可点开核对原文","与审计日志关联"],
+    t:"不可追溯的 AI 决策在合规场景无法被采信。",
+    r:["Perplexity","NotebookLM","Glean"]}
+  ],
+  appendix:{matrix:{cols:["自动执行","自动+可撤销","先人工确认","影响预览","留审计"],rows:[["可逆低影响(草稿/生成)",5,5,2,2,3],["可逆高影响(批量改)",3,5,4,5,5],["不可逆(删除/付款/发送)",1,2,5,5,5],["跨用户/发布级",1,1,5,5,5]]},combos:[["高频低险","自动化档位自动 + 可撤销回滚 + 结果可编辑"],["高影响单点","人工确认 HITL + 操作影响预览 + 可撤销"],["合规强控","权限边界 + 审计日志 + 决策溯源"]],pitfalls:["高风险操作无人工确认，AI 直接执行","批量操作前不预览影响范围就动手","执行后无撤销，或撤销并不能真正复原","AI 越权访问用户无权限的数据","记住用户隐私却不可见不可清除","关键操作/决策不留审计，出问题无法追责"],checks:["高风险/不可逆操作执行前有人工确认（HITL）","自动化有清晰档位且可随时切换","执行后可撤销并真正复原原状","批量/影响大操作有影响预览","AI 权限不超出用户既有权限，越权有合规出口","记忆可见可逐条删除、可一键清空","操作与决策有不可篡改的审计留痕","决策可追溯到依据并可展开核对","已定义确认率、撤销率、越权拦截率与审计覆盖率"]}
+}
+];
+
+/* =====================================================================
+   渲染引擎
+   ===================================================================== */
+const doc=document.getElementById("doc");
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));}
+function dots(n){let s="";for(let i=0;i<5;i++)s+=i<n?"●":"○";return s;}
+
+/* SVG 线性图标库：按模式名返回内联图标。24px viewBox、stroke 当前色、未命中回退中性圆点。 */
+const ICONS={
+  /* —— 1 入口 —— */
+  "导航栏按钮":`<rect x="2" y="3" width="20" height="18" rx="2"/><circle cx="12" cy="12" r="2.5"/><circle cx="6" cy="7" r="1.2"/><circle cx="18" cy="7" r="1.2"/>`,
+  "悬浮球":`<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 20v1"/>`,
+  "工具栏图标":`<path d="M4 5h16M4 12h16M4 19h16"/>`,
+  "划词唤起":`<path d="M4 6h9M4 11h7M4 16h5"/><path d="M14 10l6 6-2 2-6-6 2-2z"/>`,
+  "右键菜单":`<path d="M9 3v2M13 3v2M17 3v2M5 9h14M5 13h10"/><path d="M6 21a3 3 0 1 1 0-6 3 3 0 0 1 0 6z"/>`,
+  "就近触发":`<path d="M12 21s7-5.5 7-11a7 7 0 1 0-14 0c0 5.5 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/>`,
+  "命令面板":`<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M6 9l3 3-3 3M11 15h6"/>`,
+  "空状态引导":`<path d="M6 2h9l4 4v16H6V2z"/><path d="M14 2v4h4"/><path d="M8 13h8M8 16h5"/>`,
+  /* —— 2 输入 —— */
+  "自适应输入框":`<rect x="2" y="8" width="20" height="9" rx="2"/><path d="M2 12h9"/><path d="M6 14l2-2 2 2"/>`,
+  "占位与引导文案":`<rect x="2" y="8" width="20" height="9" rx="2"/><path d="M5 11l2-2 2 2"/>`,
+  "发送与停止态":`<path d="M12 2l6 11-6 9-6-9 6-11z"/><path d="M9 13h6"/>`,
+  "推荐问题":`<path d="M12 3l2 5 5 2-5 2-2 5-2-5-5-2 5-2 2-5z"/>`,
+  "Prompt 模板":`<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M6 9h5M6 12h5M13 9h5M13 12h5M7 15h10"/>`,
+  "快捷指令 /":`<path d="M4 14l4-4M20 10l-4 4M12 4v5M12 15v5"/>`,
+  "附件与多模态":`<path d="M4 15l5-5 4 4 3-3 4 4v3a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-3z"/><circle cx="8.5" cy="7.5" r="1.6"/>`,
+  "语音输入":`<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v4"/>`,
+  "上下文挂载":`<path d="M4 4h11l5 5v11H4V4z"/><path d="M14 4v6h6"/><path d="M8 13h8M8 16h5"/>`,
+  /* —— 3 过程 —— */
+  "骨架占位":`<rect x="3" y="5" width="18" height="6" rx="2"/><rect x="3" y="14" width="14" height="6" rx="2"/>`,
+  "等待提示":`<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 3"/>`,
+  "步骤展示":`<path d="M4 5h16M4 12h16M4 19h16"/><path d="M4 5l2 0M4 12l2 0M4 19l2 0"/>`,
+  "工具调用":`<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M9 10l-3 2 3 2M12 14h4"/>`,
+  "阶段进度":`<path d="M4 4v16M4 4h2M4 9h2M4 14h2"/><path d="M8 5h12M8 10h10M8 15h8"/>`,
+  "流式输出":`<path d="M3 13c2-4 5 4 8-1s5-3 9 0"/><path d="M3 19c2-3 5 3 8-1s5-3 9-1"/>`,
+  "停止生成":`<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M4 10h16"/>`,
+  "重新生成":`<path d="M20 11a8 8 0 1 0-2.5 6.5"/><path d="M20 5v6h-6"/>`,
+  "超时降级":`<circle cx="12" cy="13" r="8"/><path d="M12 9v4l3 2M9 3h6"/>`,
+  /* —— 4 输出 —— */
+  "代码块":`<path d="M8 7l-5 5 5 5M16 7l5 5-5 5M13 4l-2 16"/>`,
+  "表格":`<path d="M3 4h18v16H3V4z"/><path d="M3 9h18M3 14h18M9 4v16M15 4v16"/>`,
+  "图表/可视化":`<path d="M4 20V9M10 20V4M16 20v-8M21 20H3"/>`,
+  "卡片化结果":`<path d="M3 5h18v6H3V5zM3 14h11v6H3v-6z"/><path d="M17 15l3 2 3-2"/>`,
+  "来源标注与核对":`<path d="M8 21h8M12 17v4"/><path d="M6 4h12a3 3 0 0 1 3 3 3 3 0 0 1 3 3v0a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3 3 3 0 0 1 3-3v0"/>`,
+  "置信度/不确定提示":`<circle cx="12" cy="12" r="8"/><path d="M9.5 9.2A2.6 2.6 0 0 1 12 8c1.4 0 2.5 1 2.5 2.3 0 1.6-2.5 2-2.5 3.7"/><circle cx="12" cy="16.8" r=".2"/>`,
+  "消息级操作":`<path d="M21 6v11a2 2 0 0 1-2 2H8l-5 4V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><path d="M7 9h10M7 13h7"/>`,
+  "选段追问":`<path d="M3 6h13M3 11h13"/><path d="M17 13l4 4-2 2-4-4 2-2z"/>`,
+  "分栏工作区 Artifacts":`<rect x="3" y="4" width="8" height="16" rx="1.5"/><rect x="13" y="4" width="8" height="9" rx="1.5"/><rect x="13" y="15" width="8" height="5" rx="1.5"/>`,
+  /* —— 5 角色 —— */
+  "头像形态":`<circle cx="12" cy="8" r="4"/><path d="M4 20c1-3.5 4-5 8-5s7 1.5 8 5"/>`,
+  "多端尺寸适配":`<rect x="6" y="3" width="12" height="18" rx="2"/><circle cx="12" cy="19" r=".5"/><path d="M9 4h6"/>`,
+  "状态动效":`<circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/>`,
+  "情绪与克制":`<circle cx="12" cy="12" r="8"/><path d="M8 14a4 4 0 0 0 8 0"/><path d="M8.5 9h.01M15.5 9h.01"/>`,
+  "语气标尺":`<rect x="3" y="10" width="18" height="4" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 7V4M18 7V4"/>`,
+  "称呼与人称":`<path d="M4 5h16M4 12h16M4 19h10"/><circle cx="18" cy="19" r="2"/>`,
+  "边界感/不过度承诺":`<circle cx="12" cy="12" r="8"/><path d="M9 10l6 4M15 10l-6 4"/>`,
+  "拒答话术":`<circle cx="12" cy="12" r="8"/><path d="M8 8l8 8M16 8l-8 8"/>`,
+  "命名与记忆点":`<path d="M3 7h18M3 12h18M7 17h14"/>`,
+  /* —— 6 异常 —— */
+  "生成失败·重试":`<path d="M6 5v6h6"/><path d="M6 11a8 8 0 1 0 2.3-5.6"/>`,
+  "限流·额度用尽":`<circle cx="12" cy="12" r="8"/><path d="M12 6v6l3 2"/>`,
+  "内容安全拦截":`<path d="M12 2l8 4v6c0 5-3.5 8.5-8 10-4.5-1.5-8-5-8-10V6l8-4z"/><path d="M8 12l3 3 5-6"/>`,
+  "无结果·查不到":`<circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/><path d="M8 11h6"/>`,
+  "信息不足·反问澄清":`<circle cx="12" cy="12" r="8"/><path d="M9.5 9.2A2.6 2.6 0 0 1 12 8c1.4 0 2.5 1 2.5 2.3 0 1.6-2.5 2-2.5 3.7"/><circle cx="12" cy="16.8" r=".2"/>`,
+  "部分成功":`<path d="M12 3l2.5 5.2 5.7.6-4.2 3.9 1.1 5.6L12 15.5 6.9 18.3 8 12.7 3.8 8.8l5.7-.6L12 3z"/><path d="M12 6v9"/>`,
+  /* —— 7 信任 —— */
+  "人工确认 HITL":`<circle cx="12" cy="12" r="8"/><path d="M12 8v4l3 2"/>`,
+  "自动化档位":`<rect x="3" y="5" width="18" height="6" rx="2"/><circle cx="8" cy="8" r="1.5"/><rect x="3" y="14" width="18" height="6" rx="2"/><circle cx="8" cy="17" r="1.5"/>`,
+  "可撤销·回滚":`<path d="M4 12a8 8 0 1 0 2.5-5.8"/><path d="M4 4v5h5"/>`,
+  "结果可编辑":`<path d="M4 20h16M5 15L15 5l4 4L9 19H5v-4z"/>`,
+  "操作影响预览":`<circle cx="12" cy="12" r="8"/><path d="M8 12h8M12 8v8"/>`,
+  "权限边界":`<rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/>`,
+  "记忆可见可清除":`<circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/><path d="M7 3h10"/>`,
+  "审计日志":`<rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h5M8 16h8"/>`,
+  "决策溯源":`<path d="M12 3v3M12 6a6 6 0 0 1 6 6h-3M18 12a6 6 0 0 1-6 6M12 18v3"/>`,
+  /* 首页等通用 */
+  "首页":`<path d="M3 11l9-7 9 7M5 9v11h14V9"/><path d="M9 20v-6h6v6"/>`,
+  "搜索":`<circle cx="11" cy="11" r="6"/><path d="M20 20l-4-4"/>`,
+  "播放":`<path d="M7 4v16l13-8z"/>`,
+  "菜单":`<path d="M3 6h18M3 12h18M3 18h18"/>`,
+  "chevron":`<path d="M6 9l6 6 6-6"/>`
+};
+function ic(name){
+  const p=ICONS[name];
+  return `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p||`<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2"/>`}</svg>`;
+}
+
+/* 参考产品 · 品牌 logo 块（品牌色缩写 + 官网外链；未收录产品灰色回退） */
+const BRAND={
+  'Gmail':['#EA4335','G'],'Gemini':['#4285F4','✦'],'Slack':['#611f69','S'],'Linear':['#5E6AD2','L'],
+  'ChatGPT':['#10a37f','C'],'Claude':['#d97757','C'],'微软 Copilot':['#0078d4','M'],'微软 365 Copilot':['#0078d4','M'],
+  'Notion':['#111','N'],'Notion AI':['#111','N'],'飞书':['#3370ff','飞'],'飞书多维表格':['#3370ff','飞'],
+  '飞书妙记':['#3370ff','妙'],'钉钉':['#0089ff','钉'],'抖音':['#111','抖'],'WPS AI':['#d1462c','W'],
+  'Kimi':['#111','K'],'豆包':['#0ea5e9','豆'],'扣子 Coze':['#7c3aed','扣'],'文心一言':['#4e6ef2','文'],
+  '通义千问':['#6c5ce7','通'],'通义听悟':['#6c5ce7','悟'],'Figma':['#f24e1e','F'],'Canva':['#00c4cc','C'],
+  'Craft':['#111','C'],'Coda':['#111','C'],'Cursor':['#111','C'],'VS Code':['#0078d4','V'],
+  'Zapier':['#ff4f00','Z'],'Glean':['#111','G'],'Intercom':['#ff6a3c','I'],'Crisp':['#3a78ff','C'],
+  'Perplexity':['#20808d','P'],'Superhuman':['#111','S'],'Raycast':['#ff6363','R'],
+  'Character.AI':['#111','C'],'Manus':['#111','M'],'GitHub Copilot':['#24292f','C'],
+  'Gmail 撤回发送':['#EA4335','G'],'LinkedIn':['#0a66c2','in'],'Gamma':['#111','G'],
+  'NotebookLM':['#0061fe','N'],'Claude Artifacts':['#d97757','C'],'ChatGPT Canvas':['#10a37f','C'],
+  'ChatGPT 数据分析':['#10a37f','C'],'ChatGPT 搜索':['#10a37f','C'],'沉浸式翻译':['#f68a24','译'],
+  'FlowGPT':['#7c3aed','F']
+};
+function refTag(r){
+  const b=BRAND[r]||['#8a8a92',(r||'')[0]||'·'];
+  return `<a class="refb" style="--rc:${b[0]}" href="https://www.google.com/search?q=${encodeURIComponent(r+' 产品')}" target="_blank" rel="noopener" title="${esc(r)}"><span class="refb-ic">${b[1]}</span><span class="refb-t">${esc(r)}</span></a>`;
+}
+
+/* B 模块 · 端到端对话工作台（各模式共用骨架，focus 参数激活不同输入方式） */
+function bdMount(st,id,cfg){
+  const doc_ctx=cfg&&cfg.ctx||'《报销需求.docx》';
+  const hello=cfg&&cfg.hello||'我能基于这篇《'+doc_ctx.replace(/[《》]/g,'')+'》帮你总结、改写、答疑。试着问我，或使用下方的输入方式体验。';
+  st.innerHTML=`<div class="bd-ws" id="bd${id}">
+    <div class="bd-top"><span class="bd-ico">✦</span><b>AI 助手</b><span class="bd-top-sub sub"></span></div>
+    <div class="bd-chat" id="bdch${id}">
+      <div class="bd-msg ai"><div class="av">✦</div><div class="txt">${hello}</div></div>
+    </div>
+    <div class="bd-ctx" id="bdctx${id}"></div>
+    <div class="bd-composer">
+      <div class="bd-suggest" id="bdsug${id}"></div>
+      <div class="bd-box">
+        <textarea class="bd-ta" id="bdta${id}" placeholder="输入消息，或按 / 唤起指令…" rows="1"></textarea>
+        <div class="bd-tools"></div>
+      </div>
+      <div class="bd-voice" id="bdv${id}"><span class="bd-wave"><i></i><i></i><i></i><i></i><i></i></span>
+        <span id="bdvt${id}" style="flex:1">正在聆听…</span>
+        <button class="bd-done" id="bdvd${id}">完成</button></div>
+    </div></div>`;
+  const chat=st.querySelector('#bdch'+id);
+  const ta=st.querySelector('#bdta'+id);
+  const tools=st.querySelector('.bd-tools');
+  function addMsg(role,html){
+    const d=document.createElement('div');d.className='bd-msg '+role;
+    d.innerHTML=(role==='ai'?'<div class="av">✦</div>':'<div class="av">我</div>')+'<div class="txt">'+html+'</div>';
+    chat.appendChild(d);chat.scrollTop=chat.scrollHeight;return d;
+  }
+  /* AI 打字回复；onDone 在打字完成时调用 */
+  function aiReply(md,onDone){
+    const el=addMsg('ai',md&&md.src?'':'');
+    const txt=el.querySelector('.txt');let i=0;
+    const full=md.text;
+    txt.textContent='';const tl=document.createElement('span');txt.appendChild(tl);
+    const iv=setInterval(()=>{i++;tl.textContent=full.slice(0,i);
+      if(i>=full.length){clearInterval(iv);if(md.src){const s=document.createElement('span');s.className='src';s.textContent=md.src;txt.appendChild(s);}chat.scrollTop=chat.scrollHeight;onDone&&onDone();}},12);
+    return {el,txt,iv};
+  }
+  function setSub(t){st.querySelector('#bd'+id+' .bd-top-sub').textContent=t||'';}
+  /* 通用工具按钮注册器 */
+  function toolBtn(key,label,html){
+    const b=document.createElement('button');b.type='button';b.className='bd-btn';b.dataset.k=key;b.title=label;
+    b.innerHTML=html;tools.appendChild(b);return b;
+  }
+  function chip(row,text,fn){const c=document.createElement('span');c.className='bd-chip';c.textContent=text;c.onclick=fn;row.appendChild(c);return c;}
+  function ctxAdd(text,icon){const row=st.querySelector('#bdctx'+id);const p=document.createElement('span');p.className='bd-pill';
+    p.innerHTML=(icon?`<span class="ic">${icon}</span>`:'')+`<span>${text}</span><span class="x">✕</span>`;
+    p.querySelector('.x').onclick=()=>p.remove();row.appendChild(p);return p;}
+  return {chat,ta,tools,addMsg,aiReply,setSub,toolBtn,chip,ctxAdd,hello,doc_ctx,docId:id,uid:'bd'+id};
+}
+
+
+
+/* 侧栏目录：按模块分组列出所有模式（单一事实来源 = m.patterns，避免漏项），模块标题可点击展开/收起 */
+function buildTree(){
+  const tree=document.getElementById("sideTree");
+  let th='';
+  LIBRARY.forEach(m=>{
+    const first=m===LIBRARY[0];
+    const order=m.groups.map(g=>g[0]);
+    const byCat={};
+    m.patterns.forEach(p=>{ (byCat[p.c]=byCat[p.c]||[]).push(p); });
+    th+=`<div class="side-group"><button class="side-cat${first?'':' collapsed'}" type="button" data-cat="${m.id}" aria-expanded="${first}"><span class="side-arrow">${ic("chevron")}</span><span class="side-cat-txt">${m.title.replace(/\s*·\s*/g,' ')}</span></button>`;
+    th+=`<div class="side-cat-body${first?'':' collapsed'}" data-body="${m.id}">`;
+    order.forEach(cat=>{
+      (byCat[cat]||[]).forEach(p=>{ th+=`<a class="side-item dim" href="#${m.id}-${safename(p.n)}" data-mod="${m.id}" data-pname="${esc(p.n)}">${ic(p.n)} ${p.n}</a>`; });
+    });
+    th+=`</div></div>`;
+  });
+  tree.innerHTML=th;
+  /* 点击模块标题：展开/收起该模块的模式列表（chevron 旋转） */
+  tree.querySelectorAll("[data-cat]").forEach(cat=>{
+    cat.addEventListener("click",()=>{
+      const body=tree.querySelector(`[data-body="${cat.dataset.cat}"]`);
+      const isCollapsed=body.classList.toggle("collapsed");
+      cat.classList.toggle("collapsed",isCollapsed);
+      cat.setAttribute("aria-expanded",!isCollapsed);
+    });
+  });
+}
+function safename(n){return n.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]+/g,'');}
+
+/* 渲染单个模式的完整详情 */
+function patternHtml(m,p){
+  const id=m.id+'-'+safename(p.n);
+  const refs=(p.r||[]).map(r=>refTag(r)).join("");
+  // 搜索索引：含全部可检索文本
+  const allTxt=[m.title,p.n,p.c,p.d,p.u,p.t,(p.r||[]).join(' '),(p.h||[]).join(' '),p.diff,p.avoid,(p.states||[]).join(' '),(p.metrics||[]).join(' '),p.rel,p.trigger,p.platform,p.a11y].filter(Boolean).join(' ').toLowerCase();
+  let card='';
+  // 上部二栏：适用场景 / 关键取舍
+  const upper=[];
+  if(p.u) upper.push(`<div class="pcell"><div class="phead">适用场景</div><div class="pbody">${esc(p.u)}</div></div>`);
+  if(p.t) upper.push(`<div class="pcell"><div class="phead">关键取舍</div><div class="pbody">${esc(p.t)}</div></div>`);
+  if(upper.length) card+=`<div class="prow">${upper.join('')}</div>`;
+  // 设计要点
+  if(p.h&&p.h.length){ card+=`<div class="pdiv"></div><div class="phead">设计要点</div><ol class="ptips">${(p.h||[]).map(x=>`<li>${esc(x)}</li>`).join("")}</ol>`; }
+  // 参考产品
+  if(refs){ card+=`<div class="pdiv"></div><div class="phead">参考产品</div><div>${refs||"—"}</div>`; }
+  // 其余扩展字段 → 统一 meta 行
+  const meta=[];
+  if(p.diff) meta.push(['与其他方案差别',esc(p.diff)]);
+  if(p.states&&p.states.length) meta.push(['关键状态',p.states.map(x=>`<span class="pchip">${esc(x)}</span>`).join("")]);
+  if(p.metrics&&p.metrics.length) meta.push(['关注指标',p.metrics.map(x=>`<span class="pchip">${esc(x)}</span>`).join("")]);
+  if(p.rel) meta.push(['关联模式',esc(p.rel)]);
+  if(p.trigger) meta.push(['触发与上下文',esc(p.trigger)]);
+  if(p.platform) meta.push(['桌面 / 移动策略',esc(p.platform)]);
+  if(p.a11y) meta.push(['无障碍与文案',esc(p.a11y)]);
+  if(meta.length){ card+=`<div class="pdiv"></div><div class="pmeta">${meta.map(x=>`<div class="mrow"><div class="mkey">${x[0]}</div><div class="mval">${x[1]}</div></div>`).join("")}</div>`; }
+  // 避免使用（卡内警示区，quote 自带标签）
+  if(p.avoid) card+=`<div class="pdiv"></div><div class="quote"><b>避免使用：</b>${esc(p.avoid)}</div>`;
+  // 交互案例（卡内演示区，demo-head 自带标题）
+  card+=`<div class="pdiv"></div>${demoHtml(m,p,id)}`;
+  let h=`<div class="pat-sec card-fold" id="sec-${id}" data-search="${esc(allTxt)}" data-n="${esc(String(p.n).toLowerCase())}" data-pname="${esc(p.n)}" data-mod="${m.id}">
+  <div id="${id}" style="scroll-margin-top:60px"></div>
+  <h3 class="pat pat-hd" data-hd="${id}"><span class="pat-hd-t">${ic(p.n)} ${esc(p.n)}</span><span class="pat-hd-d">${esc(p.d)}</span><span class="pat-arr">▾</span></h3>
+  <div class="pat-body">
+  <div class="pcard">${card}</div>
+  </div>
+  </div>`;
+  return h;
+}
+
+/* demo：按模式名匹配预设的小交互；无匹配则给"要点速览"模拟。
+   stage 仅输出空壳（含占位），交互由 initAllDemos 视口懒加载时填充。 */
+function demoHtml(m,p,id){
+  if(SPECIFIC_DEMOS[p.n]){ return `<div class="demo-area"><div class="demo-head">▶ 交互案例 · ${esc(p.n)}</div><div class="demo-stage" id="dst-${id}"><div class="demo-ph">滚动到此处加载交互演示…</div></div><div class="demo-note" id="dnt-${id}"></div></div>`; }
+  // 无实体交互的抽象模式 —— 通用"要点速览"模拟
+  return `<div class="demo-area"><div class="demo-head">▶ 交互案例 · 设计要点速览</div>
+    <div class="demo-stage" id="gen-${id}"><div class="demo-ph">滚动到此处加载…</div></div><div class="demo-note" id="gnote-${id}">点击上方标签查看要点</div></div>`;
+}
+
+/* 渲染主文档（全部模块） */
+function renderAll(){
+  let h=`<div id="top"></div>
+  <h1 class="title">AI 交互设计知识库</h1>
+  <p class="lead">覆盖 AI 产品从入口、输入、过程、输出，到角色、异常与信任的七个设计维度，60+ 种可参考模式。左侧按模块浏览，顶部搜索框可全文检索。</p>`;
+
+  LIBRARY.forEach(m=>{
+    h+=`<hr class="doc-sep">
+    <h2 class="sec" id="${m.id}">${m.title.replace(/\s*·\s*/g,' ')}</h2>
+    <p class="lead mod-lead">${m.lead}</p>`;
+    // 完整详情
+    m.patterns.forEach(p=>{ h+=patternHtml(m,p); });
+    // 模块附录（仅 A 模块有 matrix/combos/pitfalls/checks）
+    if(m.appendix) h+=renderAppendix(m,m.appendix);
+  });
+  doc.innerHTML=h;
+  initAllDemos();
+  bindAccordion();
+}
+
+/* 渲染模块附录（决策矩阵 / 组合方案 / 反例 / 检查清单） */
+function renderAppendix(m,ap){
+  let h='<hr class="appendix-sep">';
+  function appx(title,mk,body){ return `<div class="appx"><button class="appx-hd" type="button"><span class="appx-t">${title}</span><span class="appx-mk">${mk||''}</span><span class="pat-arr">▾</span></button><div class="appx-bd">${body}</div></div>`; }
+  if(ap.matrix){
+    const tbl=`<p class="body" style="color:var(--muted);font-size:14px">● 高 ○ 低 · 评分用于比较相对特征，不代表都应采用高分入口。</p>
+    <div style="overflow-x:auto"><table><tr><th style="white-space:nowrap"></th>${ap.matrix.cols.map(c=>`<th style="white-space:nowrap">${esc(c)}</th>`).join("")}</tr>`+ ap.matrix.rows.map(r=>`<tr><td style="white-space:nowrap"><b>${esc(String(r[0]))}</b></td>${r.slice(1,6).map(n=>`<td class="dots">${dots(n)}</td>`).join("")}<td style="white-space:nowrap;color:var(--blue);font-size:12px">${esc(String(r[6]||''))}</td></tr>`).join("")+`</table></div>`;
+    h+=appx('决策矩阵','不是哪个最好，而是哪个适合此刻',tbl);
+  }
+  if(ap.combos&&ap.combos.length){
+    const body=ap.combos.map(c=>`<div class="combo-row"><span class="combo-k">${esc(c[0])}</span><span class="combo-v">${esc(c[1])}</span></div>`).join("");
+    h+=appx('组合方案','主入口 + 快捷入口 + 兜底入口',body);
+  }
+  if(ap.pitfalls&&ap.pitfalls.length){
+    const body=ap.pitfalls.map(p=>`<div class="x"><span class="xn">×</span><span>${esc(p)}</span></div>`).join("");
+    h+=appx('常见反例','越醒目越要负责',body);
+  }
+  if(ap.checks&&ap.checks.length){
+    const body=ap.checks.map(c=>`<div class="check"><span>${esc(c)}</span></div>`).join("");
+    h+=appx('上线前检查','能被看见 ≠ 设计完成',body);
+  }
+  return h;
+}
+
+/* 目录大纲(顶部)放各模块标题 —— 可选，侧栏已够，此处跳过 */
+
+/* =====================================================================
+   SPECIFIC_DEMOS — 可实体交互的模式。key=模式名。value=fn(stage,note,p,id)
+   无匹配的模式自动走通用"要点速览"模拟。
+   ===================================================================== */
+const SPECIFIC_DEMOS = {
+  "自适应输入框":(st,note,p,id)=>{
+    const bd=bdMount(st,id);
+    bd.setSub('基于《报销需求.docx》');
+    bd.addMsg('ai','已读完《报销需求.docx》<b>核心要点</b>：目标是把报销审批从平均 3 天压缩到 1 天内；交互稿已通过进入开发；风险是发票识别准确率 92%（要求 98%）。');
+    /* 演示点：输入框随内容自动增高到上限后内部滚动 */
+    const ta=bd.ta;
+    const send=bd.toolBtn('send','发送','➤');
+    send.textContent='发送';send.classList.add('bd-send');send.style.width='auto';send.style.padding='0 13px';send.disabled=true;
+    send.onclick=()=>{
+      const q=ta.value.trim(); if(!q||send.classList.contains('stop'))return;
+      bd.addMsg('me',q.replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])));
+      ta.value='';ta.style.height='auto';ta.style.minHeight='34px';send.disabled=true;send.classList.add('stop');send.textContent='生成中…';
+      const full=q.toLowerCase().includes('风险')?'最大风险是发票识别准确率不达标（92% vs 98%），需在联调期内完成模型调优；其次是接口联调依赖采购侧资源。'
+        :q.toLowerCase().includes('总结')?'已归纳：目标 3→1 天、交互稿通过进入开发、风险为识别率 92% 低于 98%。可继续追问细节。'
+        :'我基于《报销需求.docx》作答：目标是压缩报销审批到 1 天内，当前风险是发票识别准确率 92%（需达 98%）。需要我继续总结、改写或答疑都可以。';
+      bd.aiReply({text:full,src:'参考来源 · 报销需求.docx 第 1–3 节'},()=>{send.classList.remove('stop');send.textContent='发送';send.disabled=true;});
+    };
+    ta.addEventListener('input',()=>{
+      ta.style.height='auto';ta.style.height=Math.min(120,ta.scrollHeight)+'px';
+      if(!send.classList.contains('stop'))send.disabled=!ta.value.trim();
+    });
+    ta.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send.onclick();} });
+    note.textContent='自适应输入框 · 随内容增高到上限后内部滚动 · 发送后 AI 基于文档端到端回复';
+  },
+  "发送与停止态":(st,note,p,id)=>{
+    const bd=bdMount(st,id,{ctx:'报销需求.docx',hello:'我可以基于《报销需求.docx》帮你总结、改写或答疑。发送后你会看到「生成中→停止」的状态变化——可随时中断，停止会保留已生成部分。'});
+    bd.setSub('基于《报销需求.docx》 · 演示发送与停止态');
+    const ta=bd.ta;
+    const send=bd.toolBtn('send','发送','➤');
+    send.textContent='发送';send.classList.add('bd-send');send.style.width='auto';send.style.padding='0 13px';send.disabled=true;
+    const FINAL='好的，基于《报销需求.docx》：目标是把报销审批从平均 3 天压缩到 1 天内。当前交互稿已通过并进入开发，风险点是发票识别准确率 92%（要求 98%），需在联调期完成模型调优。';
+    let gen=false,curI=null,tl=null;
+    function stopGen(keep){
+      if(curI){clearInterval(curI);curI=null;} gen=false;ta.disabled=false;
+      if(keep!==undefined){} // keep=true 表示用户主动停止（保留半成品）
+      send.textContent='发送';send.classList.remove('stop');send.disabled=!ta.value.trim();
+    }
+    function ensureMsg(){
+      if(!tl||!document.body.contains(tl)){ const rp=bd.addMsg('ai',''); tl=rp.querySelector('.txt'); }
+      return tl;
+    }
+    send.onclick=()=>{
+      if(gen){ // 生成中：点击=停止，保留已生成
+        const kept=ensureMsg().textContent.length||0;
+        stopGen();
+        if(kept===0)ensureMsg().textContent='（已停止 · 尚未产生内容，可重新发送）';
+        return;
+      }
+      const q=ta.value.trim(); if(!q)return;
+      bd.addMsg('me',q.replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])));
+      ta.value='';ta.style.height='auto';gen=true;
+      send.textContent='停止';send.classList.add('stop');ta.disabled=true;send.disabled=false;
+      tl=ensureMsg();tl.textContent='';let i=0;
+      curI=setInterval(()=>{i++;tl.textContent=FINAL.slice(0,i);
+        if(i>=FINAL.length){stopGen();}
+        bd.chat.scrollTop=bd.chat.scrollHeight;},18);
+    };
+    ta.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send.onclick();} });
+    ta.addEventListener('input',()=>{ if(!gen)send.disabled=!ta.value.trim(); });
+    note.textContent='发送与停止态 · 空禁用 / 有内容可发 · 生成中变「停止」可中断 · 停止保留已生成部分';
+  },
+  "快捷指令 /":(st,note,p,id)=>{
+    const bd=bdMount(st,id,{ctx:'报销需求.docx',hello:'在输入框敲一个斜杠「/」试试——我能基于《报销需求.docx》做总结、翻译、润色、写周报。也可以直接打字问我。'});
+    bd.setSub('基于《报销需求.docx》 · 演示 / 快捷指令');
+    const ta=bd.ta;
+    const box=ta.closest('.bd-box');box.style.position='relative';
+    const menu=document.createElement('div');menu.className='bd-menu';
+    const GROUPS=[['AI 指令',[['📌','总结','/总结'],['🌐','翻译','/翻译'],['✨','润色','/润色'],['📝','写周报','/写周报']]]];
+    menu.innerHTML=GROUPS.map(g=>`<div class="grp">${g[0]}</div>`+g[1].map(it=>`<div class="it" data-v="${it[2]}">${it[0]} ${it[1]}<small>${it[2]}</small></div>`).join('')).join('');
+    box.appendChild(menu);
+    const sendBtn=bd.toolBtn('send','发送','➤');
+    sendBtn.textContent='发送';sendBtn.classList.add('bd-send');sendBtn.style.width='auto';sendBtn.style.padding='0 13px';sendBtn.disabled=true;
+    let busy=false;
+    function showMenu(){menu.classList.add('show');}
+    function hideMenu(){menu.classList.remove('show');}
+    function typeReply(full,src){ 
+      busy=true;ta.disabled=true;sendBtn.classList.add('stop');sendBtn.textContent='生成中…';
+      bd.aiReply({text:full,src},()=>{ busy=false;ta.disabled=false;sendBtn.classList.remove('stop');sendBtn.textContent='发送';sendBtn.disabled=!ta.value.trim();});
+    }
+    function exec(verb){
+      hideMenu();
+      bd.addMsg('me','/'+verb.replace('/',''));
+      let full,src;
+      if(verb==='/总结'){full='已把《报销需求.docx》归纳为 3 点：目标 3 天→1 天；交互稿已通过进入开发；风险为发票识别率 92%（要求 98%）。';src='参考来源 · 报销需求.docx';}
+      else if(verb==='/翻译'){full='(EN) Cut reimbursement approval from 3 days to 1. Spec approved, dev underway. Key risk: invoice OCR 92% (target 98%).';src='参考来源 · 报销需求.docx';}
+      else if(verb==='/写周报'){full='本周完成报销流程需求评审与交互稿，进入前端开发；下周联调提测；风险：发票识别率待调优（92% vs 98%）。';}
+      else {full='已按「润色」处理：把这段报销说明改得更正式、重点更突出，可继续追问。';}
+      typeReply(full,src);
+    }
+    function sendText(){
+      const q=ta.value.trim();if(!q||busy)return;
+      bd.addMsg('me',q.replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])));
+      ta.value='';ta.style.height='auto';hideMenu();
+      const full=q.toLowerCase().includes('总结')?'核心要点：压缩审批到 1 天、交互稿已过进入开发、风险识别率 92% vs 98%。':'好的，我基于《报销需求.docx》已理解。你可以告诉我：总结 / 翻译 / 润色 / 写周报，或直接提问。';
+      typeReply(full,'参考来源 · 报销需求.docx');
+    }
+    ta.addEventListener('input',()=>{ if(!busy)sendBtn.disabled=!ta.value.trim(); if(ta.value==='/')showMenu(); else if(!ta.value.startsWith('/'))hideMenu(); });
+    ta.addEventListener('keydown',e=>{
+      if(e.key==='Escape')hideMenu();
+      if(e.key==='Enter'&&!e.shiftKey){e.preventDefault(); if(ta.value.startsWith('/')){const v=ta.value.split(' ')[0]; if(GROUPS[0][1].some(x=>x[2]===v))exec(v);} else sendText(); }
+    });
+    // 点菜单项 → 直接执行该指令（单一入口，避免双 click）
+    menu.addEventListener('click',e=>{ const it=e.target.closest('[data-v]'); if(it){exec(it.dataset.v);} });
+    sendBtn.onclick=sendText;
+    note.textContent='快捷指令 / · 输入 / 唤起命令菜单 · 命令分组带图标 · 选择后带参数执行 · 与普通输入无缝切换';
+  },
+  "人工确认 HITL":(st,note,p,id)=>{
+    st.innerHTML=`<div class="demo-paper"><b>报销审批 Agent · 检测到操作</b>
+      <div style="font-size:13.5px;margin:8px 0">AI 想<b>自动驳回</b>「张三 的第 12 笔报销」<br>影响：1 笔报销 · 金额 ¥1,280 · 操作<b>不可逆</b></div>
+      <div class="sim-progress" style="margin:10px 0"><i style="width:0" id="hitl-${id}"></i></div>
+      <span class="fp-btn inline" data-a="approve">✓ 批准</span><span class="fp-btn inline" data-a="reject">✕ 拒绝</span><span class="fp-btn inline" data-a="edit">✎ 修改</span>
+      <div class="fp-result show" id="hr-${id}">AI 建议执行高风险操作，请人工确认。</div></div>`;
+    const r=st.querySelector("#hr-"+id);
+    st.querySelectorAll("[data-a]").forEach(b=>{ b.addEventListener("click",()=>{ r.classList.add("show");
+      const t={approve:"✓ 已批准执行 —— 操作已按 HITL 流程放行。",reject:"✕ 已拒绝 —— AI 不会执行该操作。",edit:"✎ 将带修改建议重新提交确认。"}[b.dataset.a];
+      r.textContent="✨ "+t; }); });
+    note.textContent="人工确认 HITL · 高风险/不可逆操作前暂停等人确认 · 批准/修改/拒绝三选";
+  },
+  "自动化档位":(st,note,p,id)=>{
+    st.innerHTML=`<div class="demo-paper"><b>Agent 自主程度</b>
+      <div style="margin:10px 0">当前档位：<b id="lvl-${id}">人审</b></div>
+      <span class="mini-chip" data-l="副驾">🦸 副驾</span><span class="mini-chip act" data-l="人审">🛡 人审</span><span class="mini-chip" data-l="自主">🤖 自主</span>
+      <div class="fp-result show" id="al-${id}">人审：AI 提议，关键操作等你确认。</div></div>`;
+    const r=st.querySelector("#al-"+id),lbl=st.querySelector("#lvl-"+id);
+    const txt={副驾:"副驾：AI 辅助建议，所有操作由你主导。",人审:"人审：AI 提议，关键/高风险操作等你确认后执行。",自主:"自主：AI 可自动执行低风险操作，高风险仍保留兜底。"};
+    st.querySelectorAll(".mini-chip").forEach(ch=>{ ch.addEventListener("click",()=>{ st.querySelectorAll(".mini-chip").forEach(x=>x.classList.remove("act")); ch.classList.add("act");
+      const l=ch.dataset.l; lbl.textContent=l; r.textContent="✨ "+txt[l]; }); });
+    note.textContent="自动化档位 · 副驾 / 人审 / 自主 · 控制权交给用户";
+  },
+  "可撤销·回滚":(st,note,p,id)=>{
+    st.innerHTML=`<div class="demo-paper"><b>AI 已完成操作</b>
+      <div style="font-size:13.5px;margin:8px 0">AI 已「批量归档 12 封邮件」✓</div>
+      <span class="fp-btn inline" id="undo-${id}">↩ 撤销</span>
+      <div class="fp-result show" id="ur-${id}">执行完成，可随时撤销。</div></div>`;
+    const r=st.querySelector("#ur-"+id); let done=true;
+    st.querySelector("#undo-"+id).addEventListener("click",()=>{ r.classList.add("show");
+      r.textContent= done? "↩ 已撤销 —— 12 封邮件已恢复到原状态。" : "操作已撤销，无法再次撤销。"; done=false; });
+    note.textContent="可撤销 · 执行后给反悔机会 · 不可逆操作需执行前确认";
+  },
+  "流式输出":(st,note,p,id)=>{
+    st.innerHTML=`<div class="demo-paper"><b>流式输出演示</b><span class="fp-btn inline" id="stream-${id}" style="margin:6px 0">▶ 播放</span>
+      <div class="sim-msg ai" id="flow-${id}" style="min-height:60px">…</div>
+      <div class="fp-result show" id="fr-${id}">点击播放，看回答如何逐字流式输出（首字尽快出）。</div></div>`;
+    const box=st.querySelector("#flow-"+id),r=st.querySelector("#fr-"+id);let int=null,pos=0;
+    const text="新版报销流程的目标是把平均 3 天的审批压缩到 1 天内。本周已完成需求评审并进入开发…";
+    st.querySelector("#stream-"+id).addEventListener("click",()=>{ if(int)return; box.textContent=""; r.textContent="正在流式输出…"; pos=0;
+      int=setInterval(()=>{ pos++; box.textContent=text.slice(0,pos);
+        if(pos>=text.length){ clearInterval(int);int=null; r.textContent="✅ 输出完成 —— 首字(TTFT)已尽量提前，让用户边读边等。"; } },40); });
+    note.textContent="流式输出 · 逐字/逐词吐出 · 首字快比总速度重要 · 结束有完成态";
+  },
+  "停止生成":(st,note,p,id)=>{
+    st.innerHTML=`<div class="demo-paper"><b>长回答生成</b>
+      <span class="fp-btn inline" id="sg-${id}">▶ 开始</span><span class="fp-btn inline" id="sg2-${id}" style="display:none">■ 停止生成</span>
+      <div class="sim-msg ai" id="sgt-${id}" style="min-height:48px;margin-top:8px">…</div>
+      <div class="fp-result show" id="sgr-${id}">开始生成，随时可按「停止」，已生成的会保留。</div></div>`;
+    const box=st.querySelector("#sgt-"+id),r=st.querySelector("#sgr-"+id),start=st.querySelector("#sg-"+id),stop=st.querySelector("#sg2-"+id);
+    let int=null;const full="这是一段会不断往下生成的很长很长很长的回答内容，用来演示在生成过程中随时可以停止，并且停止后已经生成的部分会完整保留下来，供用户继续阅读或作为半成品继续使用，而不会被清空浪费。";
+    start.addEventListener("click",()=>{ if(int)return; start.style.display="none";stop.style.display="inline-block";box.textContent="";r.textContent="生成中…";let i=0;
+      int=setInterval(()=>{ i++; box.textContent=full.slice(0,i); if(i>=full.length){clearInterval(int);int=null;start.style.display="inline-block";stop.style.display="none";r.textContent="✅ 完整生成完成。";} },30); });
+    stop.addEventListener("click",()=>{ clearInterval(int);int=null; start.style.display="inline-block";stop.style.display="none";
+      r.textContent="■ 已停止 —— 已生成的 "+box.textContent.length+" 字被保留，未清空。"; });
+    note.textContent="停止生成 · 生成中始终可停 · 保留已生成部分";
+  },
+  "重新生成":(st,note,p,id)=>{
+    st.innerHTML=`<div class="demo-paper"><b>AI 回答</b>
+      <div class="sim-msg ai" id="rg-${id}">这是 AI 给出的第 1 版回答…</div>
+      <div style="margin-top:8px"><span class="fp-btn inline" id="rg2-${id}">🔄 重新生成</span><span class="fp-btn inline" id="rg3-${id}">🎨 换个说法</span></div>
+      <div class="fp-result show" id="rgr-${id}">觉得不满意？低成本换一版，不用重打 Prompt。</div></div>`;
+    let v=1; const r=st.querySelector("#rgr-"+id),b=st.querySelector("#rg-"+id);
+    const ver=["这是 AI 给出的第 1 版回答，内容较正式…","这是重新生成的更简洁版本，重点更突出…","这一版换成了更口语化的表达方式…"];
+    const go=(o)=>{ v++; if(v>3)v=1; b.textContent=ver[v-1]; r.textContent="✨ "+(o==="re"?`已重新生成第 ${v} 版。`:`已换了一种说法（第 ${v} 版）。`); };
+    st.querySelector("#rg2-"+id).addEventListener("click",()=>go("re"));
+    st.querySelector("#rg3-"+id).addEventListener("click",()=>go("style"));
+    note.textContent="重新生成 · 回答后可换版/换说法/继续 · 低成本纠偏";
+  },
+  "超时降级":(st,note,p,id)=>{
+    st.innerHTML=`<div class="demo-paper"><b>请求状态</b>
+      <span class="fp-btn inline" id="to-${id}">发起一个会超时的请求</span>
+      <div class="sim-progress" style="margin:8px 0"><i id="tob-${id}"></i></div>
+      <div class="fp-result show" id="tor-${id}">模拟网络繁忙导致超时，观察降级反馈。</div></div>`;
+    const bar=st.querySelector("#tob-"+id),r=st.querySelector("#tor-"+id);let int=null,val=0;
+    st.querySelector("#to-"+id).addEventListener("click",()=>{ if(int)return;r.textContent="请求中…";val=0;let tick=0;
+      int=setInterval(()=>{ tick++; val+=6; bar.style.width=Math.min(100,val)+"%";
+        if(tick>=15){ clearInterval(int);int=null; bar.style.width="100%";
+          r.textContent="⚠️ 请求超时 —— 已自动降级到更快的模型并重试成功：\u201C（降级后返回的简洁回答）\u201D 已保留你的输入。"; }
+        else if(tick===8){ r.textContent="仍在等待，若超时将自动降级…"; } },200); });
+    note.textContent="超时降级 · 说清超时/繁忙 · 给重试与降级 · 保留用户输入";
+  },
+  /* —— A · 常驻入口 —— */
+  "导航栏按钮":(st,note,p,id)=>{
+    st.innerHTML=`<div class="nav-demo"><span class="nd-brand">Acme 文档</span>
+      <span class="nd-item">首页</span><span class="nd-item">项目</span><span class="nd-item">数据</span>
+      <span class="nd-item nd-ai" id="ndAi-${id}">✦ AI 助手</span><span class="nd-user">👤</span></div>
+      <div class="nd-page"><b>项目概览</b><p>这里是当前页面内容。AI 助手入口稳定存在于顶部导航，无论滚动到哪一页都可随时唤起。</p></div>
+      <div class="nd-panel" id="ndPanel-${id}"><b>✦ AI 助手</b><p class="fp-s">我能基于当前页面帮你总结、生成、答疑。</p>
+        <button class="fp-btn" data-nd="总结本页">📌 总结本页</button><button class="fp-btn" data-nd="生成周报">📝 生成周报</button></div>
+      <div class="fp-result" id="ndRes-${id}"></div>`;
+    const ai=st.querySelector("#ndAi-"+id),panel=st.querySelector("#ndPanel-"+id),res=st.querySelector("#ndRes-"+id);
+    ai.addEventListener("click",()=>panel.classList.toggle("show"));
+    panel.querySelectorAll(".fp-btn").forEach(b=>{ b.addEventListener("click",()=>{ res.style.display="block";
+      res.textContent="✨ 已执行「"+b.dataset.nd+"」—— 在真实产品中，AI 助手会读取当前页面内容完成该动作。"; }); });
+    note.textContent="导航入口 · 位置最稳定 · 可发现性最高 · 点击唤起侧栏 AI";
+  },
+  "悬浮球":(st,note,p,id)=>{
+    st.innerHTML=`<div class="demo-paper"><b>示例文档 · 新版报销流程</b>
+      <p>本周完成了新版报销流程的需求评审，交互稿已通过，正式进入开发阶段。</p>
+      <p>目标是把平均 3 天的报销审批压缩到 1 天内。</p></div>
+      <div class="floatball" id="fball-${id}">✦</div>
+      <div class="floatpanel" id="fpanel-${id}"><b>AI 助手</b><p class="fp-s">我能基于当前文档帮你总结、生成、答疑。</p>
+        <button class="fp-btn" data-act="总结要点">📌 总结要点</button><button class="fp-btn" data-act="生成周报">📝 生成周报</button>
+        <button class="fp-btn" data-act="提取待办">⚠️ 提取待办</button>
+        <div class="fp-result" id="fpres-${id}"></div></div>`;
+    const ball=st.querySelector("#fball-"+id),panel=st.querySelector("#fpanel-"+id),res=st.querySelector("#fpres-"+id);
+    const noteDefault="悬浮球可在区域内拖动 · 可自动吸边 · 点击展开 / 再点收起";
+    let drag=false,offX=0,offY=0;
+    ball.style.right="18px";ball.style.bottom="16px";
+    // 点击开合（排除拖动后的 click）
+    ball.addEventListener("click",e=>{ if(drag)return; panel.classList.toggle("show"); });
+    function startDrag(cx,cy){
+      drag=false;
+      const br=ball.getBoundingClientRect(); offX=cx-br.left; offY=cy-br.top;
+      ball.classList.add("dragging");
+      return {move:(nx,ny)=>{ drag=true;ball.classList.add("dragging");
+        const r=st.getBoundingClientRect();
+        let x=nx-offX-r.left,y=ny-offY-r.top;
+        x=Math.max(0,Math.min(r.width-ball.offsetWidth,x));
+        y=Math.max(0,Math.min(r.height-ball.offsetHeight,y));
+        ball.style.left=x+"px";ball.style.right="auto";ball.style.top=y+"px";ball.style.bottom="auto";
+        note.textContent="悬浮球拖动中…释放后自动吸边"; },
+        up:()=>{ ball.classList.remove("dragging");
+        const r=st.getBoundingClientRect(),bb=ball.getBoundingClientRect();
+        const distL=bb.left-r.left,distR=r.right-bb.right;
+        ball.style.transition="left .25s ease";
+        if(distL<distR){ball.style.left="8px";}else{ball.style.left=(r.width-ball.offsetWidth-8)+"px";}
+        ball.style.right="auto";
+        setTimeout(()=>{ball.style.transition="";note.textContent=noteDefault;},300); }};
+    }
+    // 鼠标拖动
+    ball.addEventListener("mousedown",e=>{
+      const d=startDrag(e.clientX,e.clientY);
+      const move=ev=>d.move(ev.clientX,ev.clientY);
+      const up=()=>{ d.up(); document.removeEventListener("mousemove",move); document.removeEventListener("mouseup",up); };
+      document.addEventListener("mousemove",move); document.addEventListener("mouseup",up);
+    });
+    // 触屏拖动
+    ball.addEventListener("touchstart",e=>{
+      e.preventDefault();
+      const t=e.touches[0]; const d=startDrag(t.clientX,t.clientY);
+      const move=ev=>{ const tt=ev.touches[0]; d.move(tt.clientX,tt.clientY); };
+      const up=()=>{ d.up(); document.removeEventListener("touchmove",move); document.removeEventListener("touchend",up); };
+      document.addEventListener("touchmove",move,{passive:false}); document.addEventListener("touchend",up);
+    },{passive:false});
+    // 点击开合（触屏 tap）
+    ball.addEventListener("touchend",e=>{ if(!drag){ panel.classList.toggle("show"); } });
+    panel.querySelectorAll(".fp-btn").forEach(b=>{ b.addEventListener("click",()=>{ res.style.display="block";
+      res.textContent="✨ 已执行：「"+b.dataset.act+"」—— 在真实产品中，这会基于当前文档上下文调用 AI 完成该动作。"; }); });
+    note.textContent=noteDefault;
+  },
+  "工具栏图标":(st,note,p,id)=>{
+    st.innerHTML=`<div class="tb-bar"><b>文档</b><span class="tb-ic">B</span><span class="tb-ic"><i>I</i></span><span class="tb-ic tb-ai" id="tbAi-${id}">✦ AI</span></div>
+      <p class="tb-text" id="tbText-${id}">新版报销流程的目标是把原本平均 3 天的报销审批压缩到 1 天内。请用鼠标选中这句话里的「报销审批」几个字，然后点击上方工具栏的 ✦ AI。</p>
+      <div class="tb-menu" id="tbMenu-${id}"><button class="fp-btn" data-tb="改写">✍ 改写</button><button class="fp-btn" data-tb="精简">✂ 精简</button><button class="fp-btn" data-tb="正式化">🎩 更正式</button></div>
+      <div class="fp-result" id="tbRes-${id}"></div>`;
+    const text=st.querySelector("#tbText-"+id),menu=st.querySelector("#tbMenu-"+id),ai=st.querySelector("#tbAi-"+id),res=st.querySelector("#tbRes-"+id);
+    let marked="";
+    text.addEventListener("mouseup",()=>{ const sel=window.getSelection().toString().trim();
+      if(sel){marked=sel;menu.classList.add("show");} else{menu.classList.remove("show");} });
+    document.addEventListener("mousedown",e=>{ if(!menu.contains(e.target)&&e.target!==ai)menu.classList.remove("show"); });
+    ai.addEventListener("click",()=>{ if(marked){menu.classList.add("show");}else{res.style.display="block";res.textContent="请先选中一段文字，再点击 ✦ AI。";} });
+    menu.querySelectorAll(".fp-btn").forEach(b=>{ b.addEventListener("click",()=>{ res.style.display="block";
+      res.textContent="✨「"+b.dataset.tb+"」已应用到选中内容："+(marked?marked.slice(0,30)+(marked.length>30?"…":""):"");
+      menu.classList.remove("show");window.getSelection().removeAllRanges(); }); });
+    note.textContent="工具栏入口 · AI 是编辑能力的一部分 · 上下文精确到当前文档/选区";
+  },
+  /* —— A · 上下文入口 —— */
+  "划词唤起":(st,note,p,id)=>{
+    st.innerHTML=`<p class="sel-para" id="selPara-${id}">本次评审共收集到 12 条修改意见，其中 8 条已在交互稿中闭环，其余 4 条涉及权限模型，待与后端确认后处理。请用鼠标拖选这段话里的任意部分，观察选区上方弹出的 AI 操作浮条。</p>
+      <div class="sel-bar" id="selBar-${id}" hidden><button class="fp-btn" data-sel="改写">✍ 改写</button><button class="fp-btn" data-sel="翻译">🌐 翻译</button><button class="fp-btn" data-sel="总结">📌 总结</button></div>
+      <div class="sel-result" id="selRes-${id}"></div>`;
+    const para=st.querySelector("#selPara-"+id),bar=st.querySelector("#selBar-"+id),result=st.querySelector("#selRes-"+id);
+    function positionBar(){
+      const sel=window.getSelection();
+      if(!sel.rangeCount||sel.isCollapsed){bar.hidden=true;return;}
+      const range=sel.getRangeAt(0);
+      if(!st.contains(range.startContainer)&&!st.contains(range.endContainer)){bar.hidden=true;return;}
+      const rect=range.getBoundingClientRect(),sr=st.getBoundingClientRect();
+      bar.style.position="absolute";
+      bar.style.left=Math.max(4,rect.left-sr.left)+"px";
+      bar.style.top=Math.max(4,rect.top-sr.top-rect.height-44)+"px";
+      bar.hidden=false;
+    }
+    document.addEventListener("mouseup",()=>setTimeout(positionBar,30));
+    para.addEventListener("mouseup",()=>setTimeout(positionBar,15));
+    document.addEventListener("mousedown",e=>{ if(!bar.contains(e.target)){ setTimeout(()=>{ if(window.getSelection().isCollapsed)bar.hidden=true; },120);} });
+    bar.querySelectorAll(".fp-btn").forEach(b=>{ b.addEventListener("click",()=>{ const sel=window.getSelection().toString().trim();
+      result.style.display="block";
+      const acts={改写:"AI 已对选中文字进行改写优化。",翻译:"AI 已将选中内容翻译。",总结:"AI 已对选中内容生成摘要。"};
+      result.textContent="✨ 「"+b.dataset.sel+"」→ "+acts[b.dataset.sel]+(sel?("（选中的内容是：“"+sel.slice(0,40)+(sel.length>40?"…":"")+"”）"):"");
+      window.getSelection().removeAllRanges();bar.hidden=true; }); });
+    note.textContent="划词唤醒 · 选区即上下文 · 浮条不遮内容 · 选区消失自动收起";
+  },
+  "右键菜单":(st,note,p,id)=>{
+    st.innerHTML=`<div class="ctx-list">
+        <div class="ctx-file" id="ctxTarget-${id}" data-name="新版报销流程.md">📄 新版报销流程.md</div>
+        <div class="ctx-file">📄 需求文档.md</div>
+        <div class="ctx-file">📁 设计稿</div>
+      </div>
+      <div class="ctx-menu" id="ctxMenu-${id}">
+        <div class="cm-group" style="font-size:11px;color:#999;padding:3px 10px">文件</div>
+        <div class="cm-item">打开</div><div class="cm-item">重命名</div>
+        <div class="cm-sep"></div>
+        <div class="cm-group" style="font-size:11px;color:#0b6bcf;padding:3px 10px">✦ AI 操作</div>
+        <div class="cm-item ai" data-ctx="总结文档">✦ 总结文档</div>
+        <div class="cm-item ai" data-ctx="提取待办">✦ 提取风险与待办</div>
+        <div class="cm-item ai" data-ctx="生成周报">✦ 生成周报</div>
+      </div>
+      <div class="fp-result" id="ctxRes-${id}"></div>`;
+    const target=st.querySelector("#ctxTarget-"+id),menu=st.querySelector("#ctxMenu-"+id),res=st.querySelector("#ctxRes-"+id);
+    target.addEventListener("contextmenu",e=>{ e.preventDefault();
+      const sr=st.getBoundingClientRect();let x=e.clientX-sr.left,y=e.clientY-sr.top;
+      menu.style.left=Math.min(x,sr.width-210)+"px";menu.style.top=Math.min(y,sr.height-menu.offsetHeight)+"px";
+      menu.classList.add("show");target.classList.add("on"); });
+    document.addEventListener("click",e=>{ if(!menu.contains(e.target)){ menu.classList.remove("show");target.classList.remove("on"); } });
+    menu.querySelectorAll(".cm-item.ai").forEach(it=>{ it.addEventListener("click",()=>{ res.style.display="block";
+      res.textContent="✨「"+it.dataset.ctx+"」已对「"+target.dataset.name+"」执行 —— 真实产品会读取该文件内容完成动作。";
+      menu.classList.remove("show");target.classList.remove("on"); }); });
+    note.textContent="右键菜单 · AI 项单独分组 · 随对象动态变化 · 移动端需长按替代";
+  },
+  "就近触发":(st,note,p,id)=>{
+    st.innerHTML=`<div class="near-card" id="nearCard-${id}"><div class="nc-head">数据看板 <span class="nc-near">✦</span></div>
+        <div class="nc-txt">本周销售数据同比增长 18%，其中华东区贡献最大。</div></div>
+      <div class="near-menu" id="nearMenu-${id}"><button class="fp-btn" data-near="总结这一段">📌 总结这一段</button><button class="fp-btn" data-near="生成图表">📊 生成图表</button></div>
+      <div class="fp-result" id="nearRes-${id}"></div>`;
+    const card=st.querySelector("#nearCard-"+id),menu=st.querySelector("#nearMenu-"+id),res=st.querySelector("#nearRes-"+id);
+    card.querySelector(".nc-near").addEventListener("click",()=>{ menu.classList.toggle("show");
+      const cr=card.getBoundingClientRect(),sr=st.getBoundingClientRect();
+      menu.style.position="absolute";menu.style.left=(cr.left-sr.left+16)+"px";menu.style.top=(cr.top-sr.top+card.offsetHeight+4)+"px"; });
+    document.addEventListener("mousedown",e=>{ if(!menu.contains(e.target)&&!card.contains(e.target))menu.classList.remove("show"); });
+    menu.querySelectorAll(".fp-btn").forEach(b=>{ b.addEventListener("click",()=>{ res.style.display="block";
+      res.textContent="✨「"+b.dataset.near+"」已对「数据看板」卡片执行 —— 只处理当前对象，不扩大读取范围。";
+      menu.classList.remove("show"); }); });
+    note.textContent="就近触发 · hover 对象出现 ✦ · 只处理当前对象 · 不扩大读取范围";
+  },
+  /* —— A · 效率入口 —— */
+  "命令面板":(st,note,p,id)=>{
+    st.style.display="flex";st.style.alignItems="center";st.style.justifyContent="center";
+    st.style.flexDirection="column";st.style.gap="14px";
+    st.innerHTML=`<button class="cmd-open" id="cmdOpen-${id}">⌘ 打开命令面板 <kbd>⌘K</kbd></button>
+      <div class="cmd-mask" id="cmdMask-${id}"></div>
+      <div class="cmd-panel" id="cmdPanel-${id}">
+        <div class="cmd-input"><span>⌘</span><input id="cmdInput-${id}" placeholder="输入命令或搜索…" autocomplete="off"></div>
+        <div class="cmd-list" id="cmdList-${id}"></div>
+        <div class="cmd-foot" id="cmdFoot-${id}">↑↓ 选择 · Enter 执行 · Esc 关闭</div>
+      </div>
+      <div class="fp-result" id="cmdRes-${id}" style="width:80%"></div>`;
+    const panel=st.querySelector("#cmdPanel-"+id),mask=st.querySelector("#cmdMask-"+id),
+          input=st.querySelector("#cmdInput-"+id),list=st.querySelector("#cmdList-"+id),
+          res=st.querySelector("#cmdRes-"+id);
+    const cmds=[
+      {t:"✦ AI 总结当前文档",g:"AI 指令"},{t:"✦ 根据文档生成周报",g:"AI 指令"},
+      {t:"✦ 提取风险与待办",g:"AI 指令"},{t:"✦ AI 改写选中内容",g:"AI 指令"},
+      {t:"跳转到「数据」",g:"导航"},{t:"新建文档",g:"常用"},{t:"导出 PDF",g:"常用"}
+    ];
+    function openCmd(){ panel.classList.add("show");mask.classList.add("show");setTimeout(()=>input.focus(),50);renderCmds(""); }
+    function closeCmd(){ panel.classList.remove("show");mask.classList.remove("show"); }
+    function renderCmds(q){
+      const qq=q.trim().toLowerCase();
+      const f=cmds.filter(c=>!qq||c.t.toLowerCase().includes(qq));
+      list.innerHTML=f.map((c,i)=>`<div class="cmd-item2 ${i===0?"sel":""}" data-i="${i}"><span>${c.t}</span><span class="k">↵</span></div>`).join("")||'<div style="padding:10px;color:#999;font-size:13px">无结果</div>';
+      list.querySelectorAll(".cmd-item2").forEach(el=>{
+        el.addEventListener("mousemove",()=>{ list.querySelectorAll(".cmd-item2").forEach(x=>x.classList.remove("sel"));el.classList.add("sel"); });
+        el.addEventListener("click",()=>{ runCmd(f[el.dataset.i].t); });
+      });
+    }
+    function runCmd(t){ res.style.display="block";res.textContent="✨ 已执行：「"+t+"」";closeCmd(); }
+    st.querySelector("#cmdOpen-"+id).addEventListener("click",openCmd);
+    mask.addEventListener("click",closeCmd);
+    input.addEventListener("input",()=>renderCmds(input.value));
+    input.addEventListener("keydown",e=>{
+      const items=[...list.querySelectorAll(".cmd-item2")];
+      if(e.key==="ArrowDown"){e.preventDefault();const ci=items.findIndex(x=>x.classList.contains("sel"));if(ci>-1&&ci<items.length-1){items[ci].classList.remove("sel");items[ci+1].classList.add("sel");}}
+      else if(e.key==="ArrowUp"){e.preventDefault();const ci=items.findIndex(x=>x.classList.contains("sel"));if(ci>0){items[ci].classList.remove("sel");items[ci-1].classList.add("sel");}}
+      else if(e.key==="Enter"){const ci=items.findIndex(x=>x.classList.contains("sel"));if(ci>-1)runCmd(cmds.filter(c=>c.t.toLowerCase().includes(input.value.trim().toLowerCase()))[ci]?.t);}
+      else if(e.key==="Escape"){closeCmd();}
+    });
+    document.addEventListener("keydown",e=>{
+      if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()==="k"){e.preventDefault();panel.classList.contains("show")?closeCmd():openCmd();}
+    });
+    renderCmds("");
+    note.textContent="命令面板 · ⌘K 弹出 · 支持搜索 · ↑↓ 选择 · Enter 执行 · Esc 关闭";
+  },
+  /* —— A · 新手入口 —— */
+  "空状态引导":(st,note,p,id)=>{
+    st.style.display="flex";st.style.alignItems="center";st.style.justifyContent="center";
+    st.innerHTML=`<div class="empty-card" id="emptyCard-${id}">
+        <div class="ec-eyebrow">✦ AI 助手</div>
+        <div class="ec-title">嗨，我是知识库 AI 助手</div>
+        <div class="ec-sub">我能基于你的文档帮你总结、生成、答疑。试试这些：</div>
+        <button class="ec-btn" data-empty="总结这篇文档的要点">📌 总结这篇文档的要点</button>
+        <button class="ec-btn" data-empty="根据文档生成周报">📝 根据文档生成周报</button>
+        <button class="ec-btn" data-empty="提取其中的风险和待办">⚠️ 提取其中的风险和待办</button>
+        <div class="ec-skip" id="ecSkip-${id}">先跳过，我自己逛逛</div>
+        <div class="fp-result" id="ecRes-${id}"></div></div>`;
+    const card=st.querySelector("#emptyCard-"+id),res=st.querySelector("#ecRes-"+id);
+    card.querySelectorAll(".ec-btn").forEach(b=>{ b.addEventListener("click",()=>{ res.style.display="block";
+      res.textContent="✨ 正在执行：「"+b.dataset.empty+"」—— 完成后此引导可收起，进入主流程。"; }); });
+    st.querySelector("#ecSkip-"+id).addEventListener("click",()=>{
+      card.innerHTML='<div style="padding:20px 0;color:#999;font-size:13.5px">已跳过引导，直接进入主界面 ✕</div>';
+    });
+    note.textContent="空状态引导 · 首次教学入口 · 示例可点击 · 完成或跳过即退出";
+  },
+  "占位与引导文案":(st,note,p,id)=>{
+    const bd=bdMount(st,id,{ctx:'报销需求.docx',hello:'我先不说话——注意输入框里的占位文案。它会在你开始输入时消失。试着点下面几条示例。'});
+    bd.setSub('基于《报销需求.docx》 · 演示占位与引导文案');
+    const ta=bd.ta;
+    const phs=['例如：把《报销需求.docx》整理成待办清单','问我任何关于这份文档的问题…','试试：帮我写一封催办联调的邮件','例如：把第二段报销说明改写得更口语化'];
+    let pi=0;
+    ta.placeholder=phs[0];
+    /* 演示点：空状态给「可照着改」的示例占位，随场景/轮次变化 */
+    const ch=bd.ta.closest('.bd-composer');
+    const hintRow=document.createElement('div');hintRow.style.cssText='display:flex;gap:6px;flex-wrap:wrap;padding:0 2px;margin-bottom:2px';
+    ch.insertBefore(hintRow,ch.firstChild);
+    phs.forEach((t,i)=>{const c=document.createElement('span');c.className='bd-chip';c.textContent=t.slice(0,9)+'…';c.title=t;c.onclick=()=>{ta.placeholder=t;pi=i;ta.focus();};hintRow.appendChild(c);});
+    ta.addEventListener('focus',()=>{ });
+    ta.addEventListener('input',()=>{ ta.placeholder=''; });
+    ta.addEventListener('blur',()=>{ if(!ta.value){ pi=(pi+1)%phs.length; ta.placeholder=phs[pi];} });
+    const send=bd.toolBtn('send','发送','➤');send.textContent='发送';send.classList.add('bd-send');send.style.width='auto';send.style.padding='0 13px';send.disabled=true;
+    send.onclick=()=>{ const q=ta.value.trim(); if(!q)return; bd.addMsg('me',q.replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))); ta.value='';ta.style.height='auto';send.disabled=true;
+      const full='好的——（占位文案会引导你说的方向）。我可以基于《报销需求.docx》执行：总结要点、转待办清单、写催办邮件、润色文案。需要哪一个？';
+      bd.aiReply({text:full},()=>{send.disabled=true;}); };
+    ta.addEventListener('input',()=>send.disabled=!ta.value.trim());
+    ta.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send.onclick();} });
+    note.textContent='占位与引导文案 · 给可照着改的具体示例而非「请输入」 · 输入即消失 · 空状态引导方向';
+  },
+  "推荐问题":(st,note,p,id)=>{
+    const bd=bdMount(st,id,{ctx:'报销需求.docx',hello:'我不知道你想了解什么——但可以先从这几条推荐问题点起，或直接打字问我。'});
+    bd.setSub('基于《报销需求.docx》 · 演示推荐问题');
+    const ta=bd.ta;
+    const sugRow=st.querySelector('#bdsug'+id)||document.createElement('div'); if(!sugRow.id)sugRow.id='bdsug'+id;
+    const suggs=['📊 帮我分析这份文档的报销数据','📝 根据文档生成一份本周周报','⚠️ 提取文档里的风险与待办'];
+    suggs.forEach(t=>{const c=document.createElement('span');c.className='bd-chip';c.textContent=t;c.onclick=()=>{ta.value=t.replace(/^\S+\s/,'');ta.focus();ta.style.height='auto';};sugRow.appendChild(c);});
+    const send=bd.toolBtn('send','发送','➤');send.textContent='发送';send.classList.add('bd-send');send.style.width='auto';send.style.padding='0 13px';send.disabled=true;
+    function answer(q){
+      bd.addMsg('me',q.replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c])));
+      ta.value='';ta.style.height='auto';send.disabled=true;
+      let full;
+      if(q.includes('周报'))full='本周周报：报销流程需求评审与交互稿完成，进入前端开发；下周联调提测；风险为发票识别准确率待调优（92% vs 98%）。';
+      else if(q.includes('风险'))full='主要风险：发票识别准确率 92%（需达 98%），需在联调期内完成模型调优；其次接口联调依赖采购侧资源。';
+      else full='基于《报销需求.docx》分析：目标是把报销审批从平均 3 天压缩到 1 天内，核心动作是压缩审批环节与自动化。';
+      bd.aiReply({text:full,src:'参考来源 · 报销需求.docx'},()=>{send.disabled=true;});
+    }
+    send.onclick=()=>{ const q=ta.value.trim(); if(q)answer(q); };
+    ta.addEventListener('input',()=>send.disabled=!ta.value.trim());
+    ta.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send.onclick();} });
+    note.textContent='推荐问题 · 空会话冷启动给 3 条可点推荐 · 点击填入或直发 · 追问阶段内容不同';
+  },
+  "Prompt 模板":(st,note,p,id)=>{
+    const bd=bdMount(st,id,{ctx:'报销需求.docx',hello:'从模板开始更省事：点下方模板把文字填入输入框，把【】里的变量替换掉即可，不用从零写 Prompt。'});
+    bd.setSub('基于《报销需求.docx》 · 演示 Prompt 模板');
+    const ta=bd.ta;
+    const tpls=['帮我【提炼/改写】下面这段内容：【粘贴内容】，要求【正式/口语/简洁】','把《报销需求.docx》转成【大纲/待办/周报】，语气要【】','基于报销文档写一封【催办/通知】邮件，收件人是【财务】'];
+    const ch=ta.closest('.bd-composer');
+    const row=document.createElement('div');row.style.cssText='display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px';
+    tpls.forEach((t,i)=>{const c=document.createElement('span');c.className='bd-chip';c.textContent='模板 '+(i+1);c.title=t;c.onclick=()=>{ta.value=t;ta.focus();ta.style.height='auto';send.disabled=false;};row.appendChild(c);});
+    ch.insertBefore(row,ch.firstChild);
+    const send=bd.toolBtn('send','发送','➤');send.textContent='发送';send.classList.add('bd-send');send.style.width='auto';send.style.padding='0 13px';send.disabled=true;
+    send.onclick=()=>{ const q=ta.value.trim(); if(!q)return; bd.addMsg('me',q.replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))); ta.value='';ta.style.height='auto';send.disabled=true;
+      const full='已按模板执行：我读懂了你的意图，把【】中的变量替换后会得到更准的结果。基于《报销需求.docx》我建议：目标压缩审批到 1 天，模板是填空题，改变量即可复用。';
+      bd.aiReply({text:full,src:'参考来源 · 报销需求.docx'},()=>{send.disabled=true;}); };
+    ta.addEventListener('input',()=>send.disabled=!ta.value.trim());
+    ta.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send.onclick();} });
+    note.textContent='Prompt 模板 · 高频任务做成可填空模板 · 用【】标记变量 · 替换即用 · 可保存复用';
+  },
+  "附件与多模态":(st,note,p,id)=>{
+    const bd=bdMount(st,id,{ctx:'报销需求.docx',hello:'把文件、图片作为提问对象：点 📎 添加附件，AI 就能基于你给的材料作答。'});
+    bd.setSub('基于《报销需求.docx》 · 演示附件与多模态');
+    const ta=bd.ta;
+    const attach=bd.toolBtn('attach','附件 / 多模态','📎');
+    attach.onclick=()=>{
+      bd.ctxAdd('报销流程截图.png','🖼');
+      bd.ctxAdd('报销需求.docx','📄');
+      bd.addMsg('ai','已收到 2 个附件。我可以<small>查看</small>这些材料——想让我分析报销流程截图，还是总结需求文档？');
+      bd.chat.lastChild.querySelector('.txt').innerHTML='已收到 2 个附件（报销流程截图.png · 报销需求.docx）。我可以结合这些材料帮你分析截图里的报销节点，或总结需求文档要点。点发送告诉我你想做什么。';
+    };
+    const send=bd.toolBtn('send','发送','➤');send.textContent='发送';send.classList.add('bd-send');send.style.width='auto';send.style.padding='0 13px';send.disabled=true;
+    send.onclick=()=>{ const q=ta.value.trim(); if(!q)return; bd.addMsg('me',q.replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))); ta.value='';ta.style.height='auto';send.disabled=true;
+      const full='结合附件：报销流程共 4 步，主要耗时在人工复核与财务审批；截图显示可优化点是把发票 OCR 复核自动化（当前 92% → 目标 98%）。';
+      bd.aiReply({text:full,src:'参考来源 · 报销流程截图.png · 报销需求.docx'},()=>{send.disabled=true;}); };
+    ta.addEventListener('input',()=>send.disabled=!ta.value.trim());
+    ta.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send.onclick();} });
+    note.textContent='附件与多模态 · 文件/图片作为提问对象 · 缩略图/类型图标 · 可单个删除 · 上传有状态反馈';
+  },
+  "语音输入":(st,note,p,id)=>{
+    const bd=bdMount(st,id,{ctx:'报销需求.docx',hello:'不方便打字？点 🎤 试试语音输入——我会实时转写，你可以改准后再发送。'});
+    bd.setSub('基于《报销需求.docx》 · 演示语音输入');
+    const ta=bd.ta;
+    const voiceOv=st.querySelector('#bdv'+id);
+    const vtxt=st.querySelector('#bdvt'+id);
+    const voiceBtn=bd.toolBtn('voice','语音输入','🎤');
+    const TRANSC='把这段报销说明改写得更正式';
+    let vrun=false;
+    function startV(){vrun=true;voiceOv.classList.add('show');voiceBtn.classList.add('on');vtxt.textContent='正在聆听… 把这段报销说明改写得更正式';}
+    function stopV(place){vrun=false;voiceOv.classList.remove('show');voiceBtn.classList.remove('on');
+      if(place){ta.value=TRANSC;ta.style.height='auto';send.disabled=false;ta.focus();}
+    }
+    voiceBtn.onclick=()=>{ if(vrun)stopV(false); else {startV(); setTimeout(()=>{if(vrun){stopV(true);bd.addMsg('ai','语音已转写为文字，可改准后发送。')}},2600);} };
+    st.querySelector('#bdvd'+id).onclick=()=>stopV(true);
+    const send=bd.toolBtn('send','发送','➤');send.textContent='发送';send.classList.add('bd-send');send.style.width='auto';send.style.padding='0 13px';send.disabled=true;
+    send.onclick=()=>{ const q=ta.value.trim(); if(!q)return; bd.addMsg('me',q.replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))); ta.value='';ta.style.height='auto';send.disabled=true;
+      const full='已按你的语音指令改写：把这段报销说明改得更正式——会突出流程推进进度、明确目标（3 天→1 天）与关键风险，同时保留数据细节。';
+      bd.aiReply({text:full,src:'转写来源 · 语音输入'},()=>{send.disabled=true;}); };
+    ta.addEventListener('input',()=>send.disabled=!ta.value.trim());
+    ta.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send.onclick();} });
+    note.textContent='语音输入 · 点击或按住说话 · 波形+实时转写 · 可暂停/取消/重录 · 转写可编辑再发送';
+  },
+  "上下文挂载":(st,note,p,id)=>{
+    const bd=bdMount(st,id,{ctx:'报销需求.docx',hello:'AI 正在参考的上下文我让你看得见、也收得回：这些标签是可移除的。试试点 ✕ 或加一个新的。'});
+    bd.setSub('基于《报销需求.docx》 · 演示上下文挂载');
+    const ta=bd.ta;
+    bd.ctxAdd('当前文档：报销需求.docx','📄');
+    bd.ctxAdd('选中段落','✂️');
+    bd.ctxAdd('知识库：财务制度','📚');
+    const addCtx=bd.toolBtn('add','添加上下文','+');
+    addCtx.onclick=()=>{ const names=['聊天记录：上月报销单','规则：差旅标准','规范：发票抬头']; const n=names[Math.floor(Math.random()*names.length)]; bd.ctxAdd(n,'📎'); bd.addMsg('ai','已把「'+n+'」加入参考范围。我可以结合它作答——需要时点标签上的 ✕ 移除以缩小范围。'); };
+    const send=bd.toolBtn('send','发送','➤');send.textContent='发送';send.classList.add('bd-send');send.style.width='auto';send.style.padding='0 13px';send.disabled=true;
+    send.onclick=()=>{ const q=ta.value.trim(); if(!q)return; bd.addMsg('me',q.replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]))); ta.value='';ta.style.height='auto';send.disabled=true;
+      const full='结合当前挂载的上下文（报销需求文档 + 选中段落 + 财务制度知识库）：该笔报销符合差旅标准，但发票抬头需与报销人一致，建议补充费用明细后提交。';
+      bd.aiReply({text:full,src:'参考范围 · 报销需求.docx · 财务制度'},()=>{send.disabled=true;}); };
+    ta.addEventListener('input',()=>send.disabled=!ta.value.trim());
+    ta.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send.onclick();} });
+    note.textContent='上下文挂载 · 参考范围可见可移除 · 区分自动带入/手动添加 · 让用户知道 AI 看到什么';
+  }
+};
+
+/* 通用状态模拟：把 how/trade 变成可点击 chips 展示反馈 */
+function buildGenericDemo(stage,note,p,id){
+  const acts=[];
+  if(p.d) acts.push(["看说明",p.d]);
+  (p.h||[]).forEach((x,i)=>acts.push(["要点 "+(i+1),x]));
+  acts.push(["关键取舍",p.t]);
+  let c=`<div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px">`;
+  acts.forEach((a,i)=>{ c+=`<span class="mini-chip" data-i="${i}">${a[0]}</span>`; });
+  c+=`</div><div class="sim-scene"><div class="fp-result show" id="r-${id}">点击上方标签，查看该项具体内容…</div></div>`;
+  stage.innerHTML=c;
+  stage.querySelectorAll(".mini-chip").forEach((ch,i)=>{
+    ch.addEventListener("click",()=>{
+      stage.querySelectorAll(".mini-chip").forEach(x=>x.classList.remove("act"));
+      ch.classList.add("act");
+      const r=document.getElementById("r-"+id);
+      r.textContent=acts[i][1];
+    });
+  });
+  note.textContent="此模式为「"+p.n+"」的设计要点速览——点击标签逐条查看。";
+}
+
+/* 初始化所有 demo 区 —— 手风琴 + 视口懒加载：
+   demo 骨架已在 renderAll 输出（空 stage），仅当展开该模式、stage 进入视口附近时才构建该 demo 的交互（构建一次后保持）。 */
+const DEMO_REG={}; // id → 构建器，供手风琴展开时按需构建
+function initAllDemos(){
+  const targets=[];
+  LIBRARY.forEach(m=>{ m.patterns.forEach(p=>{
+    const id=m.id+'-'+safename(p.n);
+    if(SPECIFIC_DEMOS[p.n]){
+      const stage=document.getElementById("dst-"+id), note=document.getElementById("dnt-"+id);
+      if(stage) targets.push({el:stage,note,p,id,kind:'specific'});
+    } else {
+      const stage=document.getElementById("gen-"+id), note=document.getElementById("gnote-"+id);
+      if(stage) targets.push({el:stage,note,p,id,kind:'generic'});
+    }
+  }); });
+  function build(t){
+    if(t._built) return; t._built=true;
+    try{
+      if(t.kind==='specific') SPECIFIC_DEMOS[t.p.n](t.el, t.note, t.p, t.id);
+      else buildGenericDemo(t.el, t.note, t.p, t.id);
+    }catch(err){ console.error('[demo] 构建失败:', t.p.n, err); t._built=false; }
+  }
+  targets.forEach(t=>{ DEMO_REG[t.id]={kind:t.kind,el:t.el,note:t.note,p:t.p,id:t.id,build:()=>build(t)}; });
+  if(!('IntersectionObserver' in window)){ targets.forEach(build); return; }
+  const io=new IntersectionObserver(entries=>{
+    entries.forEach(en=>{
+      if(!en.isIntersecting) return;
+      const t=targets.find(x=>x.el===en.target);
+      if(t){ build(t); io.unobserve(en.target); }
+    });
+  },{rootMargin:'300px 0px',threshold:0});
+  targets.forEach(t=>io.observe(t.el));
+}
+/* 手风琴展开某模式时，按需构建其容器内所有 demo（收起时 stage 在 display:none 内 IO 不触发，故展开时主动构建） */
+function buildPatternDemos(id){
+  const reg=DEMO_REG[id]; if(!reg) return;
+  const sec=document.getElementById('sec-'+id); if(!sec) return;
+  Object.keys(DEMO_REG).forEach(k=>{ const r=DEMO_REG[k]; if(r.el&&sec.contains(r.el)) r.build(); });
+}
+/* 手风琴：点模式/附录标题展开收起其详情 */
+function bindAccordion(){
+  document.querySelectorAll('.pat-hd').forEach(hd=>{
+    hd.addEventListener('click',()=>{
+      const sec=hd.closest('.pat-sec'); if(!sec) return;
+      const id=hd.getAttribute('data-hd');
+      const open=sec.classList.toggle('open');
+      if(open){ buildPatternDemos(id); }
+    });
+  });
+  document.querySelectorAll('.appx-hd').forEach(hd=>{
+    hd.addEventListener('click',()=>{ const ax=hd.closest('.appx'); if(ax) ax.classList.toggle('open'); });
+  });
+}
+
+/* =====================================================================
+   搜索：全文过滤模式详情块 + 侧栏 + 结果计数
+   ===================================================================== */
+function tokenize(t){ return (t||'').toLowerCase().split(/[\s,，。、;；\/|·：:]+/).map(x=>x.trim()).filter(Boolean); }
+function doSearch(q){
+  const qq=q.trim();
+  const info=document.getElementById("searchBar");
+  const secs=document.querySelectorAll('.pat-sec');
+  if(!qq){ secs.forEach(s=>{s.classList.remove('search-hide'); clearMark(s);}); document.querySelectorAll('.side-item').forEach(i=>i.classList.remove('hide-item'));
+    if(info){info.innerHTML='';info.classList.remove('show');} return; }
+  const terms=tokenize(qq); // 多词
+  // 先清掉上一轮所有高亮(含本次不再命中的)，避免 mark 残留
+  secs.forEach(s=>clearMark(s));
+  let results=[];
+  secs.forEach(s=>{
+    const idx=(s.getAttribute('data-search')||'').toLowerCase();
+    const nm=(s.getAttribute('data-n')||'').toLowerCase();
+    // 每个词都需命中(AND)，词序无关
+    const allHit=terms.every(t=>idx.includes(t));
+    if(!allHit){ s.classList.add('search-hide'); clearMark(s); return; }
+    s.classList.remove('search-hide');
+    let score=0;
+    terms.forEach(t=>{ if(nm.includes(t)) score+=10; if(idx.indexOf(t)<=idx.indexOf(nm)+nm.length) score+=1; });
+    results.push({s,score});
+    // 展开并高亮
+    s.classList.add('open'); const hd=s.querySelector('.pat-hd'); if(hd) buildPatternDemos(hd.getAttribute('data-hd'));
+  });
+  // 相关度排序：名称命中优先
+  results.sort((a,b)=>b.score-a.score);
+  // 注意：就地显示不重排 DOM（避免打乱模块分组结构）
+  results.forEach(r=>{ hlTerms(r.s, terms); });
+  // 侧栏联动
+  document.querySelectorAll('.side-item').forEach(it=>{
+    const href=it.getAttribute('href')||''; if(href==="#top"||href==="#cover")return;
+    const sec=document.getElementById(href.slice(1));
+    const keep=sec&&!sec.classList.contains('search-hide');
+    it.classList.toggle('hide-item',!keep);
+    if(keep){ const body=it.closest('.side-cat-body'); if(body&&body.classList.contains('collapsed')){ body.classList.remove('collapsed');
+      const cat=body.previousElementSibling; if(cat&&cat.classList.contains('side-cat')){cat.classList.remove('collapsed');cat.setAttribute('aria-expanded','true');} } }
+  });
+  // 命中模块聚合（去重），"标题词被命中"的模块判定
+  const hitMods=[]; const modSeen=new Set();
+  results.forEach(r=>{
+    const mid=r.s.getAttribute('data-mod');
+    if(!mid||modSeen.has(mid))return; modSeen.add(mid);
+    const mhd=document.getElementById(mid);
+    if(mhd&&mhd.classList&&mhd.classList.contains('sec')){
+      const txt=(mhd.textContent||'').toLowerCase();
+      const titleIsHit=terms.every(t=>txt.includes(t));
+      hitMods.push({id:mid,el:mhd,titleIsHit,title:(mhd.textContent||'').trim()});
+    }
+  });
+  hitMods.sort((a,b)=>(b.titleIsHit?1:0)-(a.titleIsHit?1:0));
+  if(info){
+    info.classList.add('show');
+    let modBlock='';
+    if(hitMods.length){
+      modBlock=`<div class="mod-hits"><span class="mh-lb">命中模块</span>`
+        +hitMods.map(m=>`<span class="mod-jump" data-mod="${m.id}" ${m.titleIsHit?'style="outline:2px solid rgba(233,160,0,.7);outline-offset:-1px"':''}>${esc(m.title)}</span>`).join('')
+        +`</div>`;
+    }
+    info.innerHTML=`<div class="searchinfo">`+modBlock
+      +(results.length?`搜索 “${qq}” · <b>${results.length}</b> 个结果`:`搜索 “${qq}” 无结果`)
+      +` <span class="clear" onclick="document.getElementById('searchInput').value='';doSearch('')">✕ 清空</span></div>`;
+    const jumps=info.querySelectorAll('.mod-jump');
+    jumps.forEach(j=>{ j.onclick=function(ev){ ev.preventDefault(); const t=document.getElementById(j.getAttribute('data-mod')); if(t){ t.scrollIntoView({behavior:'smooth',block:'start'}); } }; });
+  }
+  // 标题词被命中的模块 → 平滑滚动定位到首个，使模块大标题高亮可见
+  const firstHit=hitMods.find(m=>m.titleIsHit);
+  if(firstHit&&firstHit.el){ try{ firstHit.el.scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){} }
+}
+/* 高亮命中词(支持多词，不嵌套mark)：遍历 模块标题+.pat-hd-t/.pat-hd-d 文本节点，对命中的词包 <mark> */
+function hlTerms(sec,terms){
+  const modId=sec.getAttribute('data-mod');
+  const modHd=modId?document.getElementById(modId):null;
+  const tgt=[...(modHd&&modHd.classList&&modHd.classList.contains('sec')?[modHd]:[]), ...sec.querySelectorAll('.pat-hd-t,.pat-hd-d')];
+  tgt.forEach(el=>{
+    if(!el) return;
+    const walker=document.createTreeWalker(el,NodeFilter.SHOW_TEXT,null);
+    const nodes=[]; let n;
+    while((n=walker.nextNode())){
+      // 跳过已处于 mark 内的文本节点(避免嵌套)
+      let p=n.parentNode, inside=false;
+      while(p&&p!==el){ if(p.nodeName==='MARK'){inside=true;break;} p=p.parentNode; }
+      if(!inside) nodes.push(n);
+    }
+    nodes.forEach(tn=>{
+      const low=tn.nodeValue.toLowerCase();
+      // 收集该文本节点命中词集合(按出现位置)
+      const hits=[];
+      terms.forEach(t=>{ if(low.includes(t)) hits.push(t); });
+      if(!hits.length) return;
+      let frag; const text=tn.nodeValue;
+      // 简化：仅当文本含某词时在该词外包mark，多词逐词处理易重叠 → 用一个顺序扫描
+      frag=document.createDocumentFragment(); let pos=0; const used=new Set();
+      // 对每个位置找最早出现的任一命中词
+      while(pos<text.length){
+        let best=null, bp=-1;
+        terms.forEach(t=>{ const li=low.indexOf(t,pos); if(li!==-1&&(bp===-1||li<bp)){bp=li;best=t;} });
+        if(best===null||bp===-1){ frag.appendChild(document.createTextNode(text.slice(pos))); pos=text.length; break; }
+        if(bp>pos) frag.appendChild(document.createTextNode(text.slice(pos,bp)));
+        const mk=document.createElement('mark'); mk.className='hl'; mk.textContent=text.slice(bp,bp+best.length); frag.appendChild(mk);
+        pos=bp+best.length;
+      }
+      tn.parentNode.replaceChild(frag,tn);
+    });
+  });
+}
+function hlNode(sec,t){ hlTerms(sec,[t]); }
+function clearMark(sec){
+  const scope=[sec];
+  const mid=sec.getAttribute('data-mod');
+  const hd=mid?document.getElementById(mid):null;
+  if(hd&&hd.classList&&hd.classList.contains('sec')) scope.push(hd);
+  scope.forEach(el=>el.querySelectorAll('mark.hl').forEach(mk=>{ const p=mk.parentNode; p.replaceChild(document.createTextNode(mk.textContent),mk); p.normalize(); }));
+}
+/* 清空搜索（供 input onchange/clear） */
+function clearSearch(){ document.getElementById("searchInput").value=""; doSearch(""); }
+function toggleSidebar(){
+  const sb=document.getElementById("sidebar");
+  sb.classList.toggle('closed');sb.classList.toggle('open');
+  document.getElementById("content").classList.toggle('shifted');
+}
+
+/* —— 初始化时执行（DOM 已渲染）—— */
+renderAll();
+buildTree();
+
+/* 进入时若无指定锚点，默认选中并定位到模块1首个模式「导航栏按钮」 */
+if(!location.hash){
+  const first=document.getElementById('1-导航栏按钮');
+  if(first){ window.scrollTo({top:first.getBoundingClientRect().top+window.scrollY-70, behavior:'auto'}); }
+}
+// 默认展开模块1首个模式详情（使进入即看到内容与 demo）
+(function(){
+  const sec1=document.getElementById('sec-1-导航栏按钮');
+  if(sec1){ sec1.classList.add('open'); buildPatternDemos('1-导航栏按钮'); }
+})();
+
+/* 搜索框 Esc 清空 */
+document.getElementById("searchInput").addEventListener("keydown",e=>{
+  if(e.key==="Escape"){ e.target.value=""; doSearch(""); e.target.blur(); }
+});
+
+/* 滚动高亮：侧栏当前模式 + crumb 更新 */
+(function spy(){
+  const cats=document.querySelectorAll('.side-cat');
+  const catMap={}; cats.forEach(c=>catMap[c.dataset.cat]=c);
+  const items=document.querySelectorAll('.side-item');
+  const itemTargets=[...items].map(a=>{const href=a.getAttribute('href');return href&&href.startsWith('#')&&href.length>1?{a,href,el:document.getElementById(href.slice(1))}:null;}).filter(Boolean);
+  // 模块级边界：每模块的 h2.sec（id=m.id）作为该模块起点
+  const modAnchors=LIBRARY.map(m=>({id:m.id,el:document.getElementById(m.id)}));
+  function currentMod(pos){
+    let curId=null;
+    for(const x of modAnchors){ if(x.el&&x.el.offsetTop<=pos) curId=x.id; }
+    return curId;
+  }
+  function update(){
+    const pos=window.scrollY+100;
+    const mod=currentMod(pos);
+    // 当前模式条目高亮
+    let curItem=null;
+    for(const t of itemTargets){ if(t.el&&t.el.offsetTop<=pos) curItem=t; }
+    items.forEach(i=>i.classList.remove('on'));
+    if(mod){
+      const body=document.querySelector(`[data-body="${mod}"]`);
+      if(body&&body.classList.contains('collapsed')) body.classList.remove('collapsed');
+      const cat=catMap[mod];
+      if(cat){ cat.classList.remove('collapsed'); cat.setAttribute('aria-expanded','true'); }
+    }
+    if(curItem){ curItem.a.classList.add('on');
+      const secEl=curItem.el.closest?curItem.el.closest('.pat-sec'):curItem.el.parentElement;
+      const cmod=secEl?secEl.getAttribute('data-mod'):null, pn=secEl?secEl.getAttribute('data-pname'):null;
+      const sb=document.getElementById("crumbNow"); if(sb) sb.textContent=(cmod?cmod+' ':'')+(pn||"总览");
+    } else {
+      // 滚到顶部总览区：保底选中第一个模式「导航栏按钮」，不清除
+      if(itemTargets.length){ itemTargets[0].a.classList.add('on'); }
+      const sb=document.getElementById("crumbNow"); if(sb) sb.textContent="总览";
+    }
+  }
+  window.addEventListener('scroll',update,{passive:true});
+  try{ update(); }catch(e){ console.error('[spy] init error',e); }
+})();
+</script>
+</body>
+</html>
