@@ -919,6 +919,12 @@ function makeSteps50(q){
     const need = (10 - aOnes) % 10;
     if(aOnes + b >= 10){
       const rest = b - need;
+      if(rest === 0){
+        return [
+          {t:"看 <b>"+a+"</b>，离下一个整十还差 <b>"+need+"</b>。",hot:false},
+          {t:a+" + "+need+" = <b>"+ans+"</b>，正好凑成整十！",hot:true}
+        ];
+      }
       return [
         {t:"看 <b>"+a+"</b>，离下一个整十还差 <b>"+need+"</b>。",hot:false},
         {t:"把 "+b+" 拆成 <b>"+need+"</b> 和 <b>"+rest+"</b>。",hot:true},
@@ -932,6 +938,11 @@ function makeSteps50(q){
   }
   if(b >= 10){
     const afterTens = a - bTens * 10;
+    if(bOnes === 0){
+      return [
+        {t:"减的是整十数，直接减就好：<b>"+a+" − "+b+" = "+ans+"</b>。",hot:true}
+      ];
+    }
     return [
       {t:"先减整十：<b>"+a+" − "+bTens*10+" = "+afterTens+"</b>。",hot:true},
       {t:"再减个位：<b>"+afterTens+" − "+bOnes+" = "+ans+"</b>。",hot:false}
@@ -1202,6 +1213,12 @@ function animSteps50(q){
     const need = (10 - aOnes) % 10;
     if(aOnes + b >= 10){
       const rest = b - need;
+      if(rest === 0){
+        return [
+          {row: anEq(a + " + " + b + " = ？"), cap: "先看 <b>" + a + "</b>，离整十还差 <b>" + need + "</b>", hot:false},
+          {row: anEq(a + " + " + need + " = " + ans, true), cap: "正好凑成整十，答案是 <b>" + ans + "</b>", hot:true}
+        ];
+      }
       return [
         {row: anEq(a + " + " + b + " = ？"), cap: "先看 <b>" + a + "</b>，离整十还差 <b>" + need + "</b>", hot:false},
         {row: anEq(a + " + " + need + " = " + (a+need)), cap: "从 " + b + " 里拆出 <b>" + need + "</b>，凑成整十 <b>" + (a+need) + "</b>", hot:true},
@@ -1216,6 +1233,12 @@ function animSteps50(q){
   }
   if(b >= 10){
     const afterTens = a - bTens * 10;
+    if(bOnes === 0){
+      return [
+        {row: anEq(a + " − " + b + " = ？"), cap: "减的是整十数，直接减", hot:false},
+        {row: anEq(a + " − " + b + " = " + ans, true), cap: "答案是 <b>" + ans + "</b>", hot:true}
+      ];
+    }
     return [
       {row: anEq(a + " − " + b + " = ？"), cap: "两位数减两位数，先减整十、再减个位", hot:false},
       {row: anEq(a + " − " + bTens*10 + " = " + afterTens), cap: "先减整十：<b>" + a + " − " + bTens*10 + " = " + afterTens + "</b>", hot:true},
